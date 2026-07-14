@@ -1,6 +1,6 @@
 import * as Blockly from 'blockly/core';
 import 'blockly/blocks';
-import {beforeAll, describe, expect, it} from 'vitest';
+import {beforeAll, describe, expect, it} from 'bun:test';
 import {BerryGenerator, registerBlockBerryBlocks} from '../src/index.js';
 
 beforeAll(() => {

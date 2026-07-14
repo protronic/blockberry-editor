@@ -26,8 +26,8 @@ Programme übernommen.
 ### Webapp starten
 
 ```sh
-npm install
-npm run dev
+bun install
+bun run dev
 ```
 
 Die Webapp bietet:
@@ -39,7 +39,7 @@ Die Webapp bietet:
 - Export des generierten `.be`-Skripts
 - konfigurierbaren HTTP-PUT-Upload an ein Gerät
 
-Der Produktions-Build liegt nach `npm run build` in `dist/web`.
+Der Produktions-Build liegt nach `bun run build` in `dist/web`.
 
 ### Generator in einer eigenen Oberfläche
 
@@ -104,6 +104,6 @@ Sperrzeit erneut zulässigen Eskalation liefern. Dadurch läuft der untergeordne
 ## Entwicklung
 
 ```sh
-npm install
-npm run check
+bun install
+bun run check
 ```

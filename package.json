@@ -17,12 +17,12 @@
   ],
   "scripts": {
     "dev": "vite",
-    "build": "npm run build:lib && npm run build:web",
+    "build": "bun run build:lib && bun run build:web",
     "build:lib": "tsc -p tsconfig.json",
     "build:web": "vite build",
     "preview": "vite preview",
-    "test": "vitest run",
-    "check": "npm run build && npm test"
+    "test": "bun test",
+    "check": "bun run build && bun run test"
   },
   "repository": {
     "type": "git",
@@ -47,7 +47,6 @@
   },
   "devDependencies": {
     "typescript": "^7.0.2",
-    "vite": "^8.1.4",
-    "vitest": "^4.1.10"
+    "vite": "^8.1.4"
   }
 }
