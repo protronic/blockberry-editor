@@ -84,6 +84,7 @@ export class BerryGenerator extends LuaGenerator {
     this.functionNames_ = Object.create(null) as Record<string, string>;
 
     const variables = workspace
+      .getVariableMap()
       .getAllVariables()
       .map((model) => `var ${this.getVariableName(model.getId())} = nil`)
       .join('\n');
@@ -170,12 +171,17 @@ export class BerryGenerator extends LuaGenerator {
       ];
     };
     this.forBlock.math_arithmetic = (block) => {
+      if (block.getFieldValue('OP') === 'POWER') {
+        this.definitions_.import_math = 'import math';
+        const left = value(this, block, 'A', '0');
+        const right = value(this, block, 'B', '0');
+        return [`math.pow(${left}, ${right})`, BerryOrder.MEMBER];
+      }
       const operators: Record<string, [string, BerryOrder]> = {
         ADD: ['+', BerryOrder.ADDITIVE],
         MINUS: ['-', BerryOrder.ADDITIVE],
         MULTIPLY: ['*', BerryOrder.MULTIPLICATIVE],
         DIVIDE: ['/', BerryOrder.MULTIPLICATIVE],
-        POWER: ['**', BerryOrder.UNARY],
       };
       const [operator, order] = operators[block.getFieldValue('OP')] ?? ['+', BerryOrder.ADDITIVE];
       return [

@@ -64,4 +64,22 @@ describe('BerryGenerator', () => {
     expect(code).toContain('ui.set_text("label\\"); evil(\\"", "OK")');
     expect(code).not.toContain('0x2000); evil()');
   });
+
+  it('uses the Berry math module for powers', () => {
+    const workspace = new Blockly.Workspace();
+    const power = workspace.newBlock('math_arithmetic');
+    power.setFieldValue('POWER', 'OP');
+    const base = workspace.newBlock('math_number');
+    base.setFieldValue(2, 'NUM');
+    const exponent = workspace.newBlock('math_number');
+    exponent.setFieldValue(8, 'NUM');
+    power.getInput('A')!.connection!.connect(base.outputConnection!);
+    power.getInput('B')!.connection!.connect(exponent.outputConnection!);
+
+    const code = new BerryGenerator().workspaceToCode(workspace);
+
+    expect(code).toContain('import math');
+    expect(code).toContain('math.pow(2, 8)');
+    expect(code).not.toContain('**');
+  });
 });

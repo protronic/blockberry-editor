@@ -1,7 +1,7 @@
-import type {ToolboxDefinition} from 'blockly/core/utils/toolbox';
+import type * as Blockly from 'blockly/core';
 
 /** Default toolbox focused on small PLC-style IoT workflows. */
-export const blockBerryToolbox: ToolboxDefinition = {
+export const blockBerryToolbox: Blockly.utils.toolbox.ToolboxDefinition = {
   kind: 'categoryToolbox',
   contents: [
     {
