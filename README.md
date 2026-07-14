@@ -1,1 +1,82 @@
-# blockberry-editor
+# BlockBerry Editor – Berry-Backend für Blockly
+
+BlockBerry erzeugt Berry-Skripte für kleine IoT-Ablaufsteuerungen („Mini-SPS“)
+und programmierbare Eskalationssysteme. Das Paket enthält den Generator, die
+Domänenblöcke und eine fertige Toolbox; eine konkrete Editor-Oberfläche und die
+C-Bindings sind bewusst getrennt.
+
+Der Generator leitet sich von Blocklys Lua-Generator ab, ersetzt aber die
+Sprachsyntax vollständig durch Berry. So werden keine Lua-Konstrukte in Berry-
+Programme übernommen.
+
+## Umfang
+
+- zyklische, nicht blockierende Mini-SPS-Tasks
+- digitale Ein- und Ausgänge
+- zustandsbehaftete Eskalation mit Stufe und Sperrzeit
+- Signalisierung und Messwerterfassung
+- lokales Object Dictionary sowie CANopen SDO/NMT
+- eingeschränkte LVGL-Operationen ohne Rohcode oder frei wählbare Methoden
+- Berry-Generatoren für die benötigten Blockly-Logik-, Mathematik-, Text- und
+  Variablenblöcke
+
+## Einbindung
+
+```ts
+import * as Blockly from 'blockly';
+import {
+  berryGenerator,
+  blockBerryToolbox,
+  registerBlockBerryBlocks,
+} from '@protronic/blockberry-editor';
+
+registerBlockBerryBlocks();
+
+const workspace = Blockly.inject('blockly', {
+  toolbox: blockBerryToolbox,
+});
+
+const berrySource = berryGenerator.workspaceToCode(workspace);
+```
+
+## Runtime-Vertrag
+
+Die generierten Skripte sprechen eine kleine, kontrollierte Binding-Schicht an:
+
+```text
+sps.every(interval_ms, callback)
+sps.wait(duration_ms)
+sps.input(channel)
+sps.output(channel, value)
+
+escalation.raise_if(rule_id, condition, level, message, cooldown_s)
+signal.set(name, state)
+monitor.record(metric, value, unit)
+
+od.read(index, subindex)
+od.write(index, subindex, value)
+canopen.sdo_read(node, index, subindex)
+canopen.sdo_write(node, index, subindex, value)
+canopen.nmt(node, command)
+
+ui.set_text(widget_id, text)
+ui.set_visible(widget_id, visible)
+ui.set_color(widget_id, color)
+```
+
+Diese Namen sind die vorgesehene Grenze zu den nativen C-Modulen. Für Tasmota
+kann die Implementierung dem Berry/LVGL-Mapping folgen, ohne dessen globale
+LVGL-Objekte direkt für Blockly freizugeben. Insbesondere erzeugen die UI-Blöcke
+nur drei freigegebene Operationen, quoten Widget-IDs und erlauben keinen
+eingebetteten Berry-Code.
+
+`escalation.raise_if` muss `true` nur bei einer neuen oder nach Ablauf der
+Sperrzeit erneut zulässigen Eskalation liefern. Dadurch läuft der untergeordnete
+„bei neuer Eskalation“-Zweig nicht in jedem SPS-Zyklus.
+
+## Entwicklung
+
+```sh
+npm install
+npm run check
+```
