@@ -2,8 +2,8 @@
 
 BlockBerry erzeugt Berry-Skripte für kleine IoT-Ablaufsteuerungen („Mini-SPS“)
 und programmierbare Eskalationssysteme. Das Paket enthält den Generator, die
-Domänenblöcke und eine fertige Toolbox; eine konkrete Editor-Oberfläche und die
-C-Bindings sind bewusst getrennt.
+Domänenblöcke, eine fertige Toolbox und eine direkt nutzbare Weboberfläche. Die
+nativen C-Bindings bleiben bewusst von der Webapp getrennt.
 
 Der Generator leitet sich von Blocklys Lua-Generator ab, ersetzt aber die
 Sprachsyntax vollständig durch Berry. So werden keine Lua-Konstrukte in Berry-
@@ -21,6 +21,26 @@ Programme übernommen.
   Variablenblöcke
 
 ## Einbindung
+
+### Webapp starten
+
+```sh
+npm install
+npm run dev
+```
+
+Die Webapp bietet:
+
+- Blockly-Arbeitsfläche mit einem Mini-SPS-Beispielprojekt
+- Live-Vorschau des erzeugten Berry-Skripts
+- automatische lokale Sicherung im Browser
+- Import und Export von `.blockberry.json`-Projektdateien
+- Export des generierten `.be`-Skripts
+- konfigurierbaren HTTP-PUT-Upload an ein Gerät
+
+Der Produktions-Build liegt nach `npm run build` in `dist/web`.
+
+### Generator in einer eigenen Oberfläche
 
 ```ts
 import * as Blockly from 'blockly';

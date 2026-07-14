@@ -16,7 +16,11 @@
     "dist"
   ],
   "scripts": {
-    "build": "tsc -p tsconfig.json",
+    "dev": "vite",
+    "build": "npm run build:lib && npm run build:web",
+    "build:lib": "tsc -p tsconfig.json",
+    "build:web": "vite build",
+    "preview": "vite preview",
     "test": "vitest run",
     "check": "npm run build && npm test"
   },
@@ -43,6 +47,7 @@
   },
   "devDependencies": {
     "typescript": "^7.0.2",
+    "vite": "^8.1.4",
     "vitest": "^4.1.10"
   }
 }

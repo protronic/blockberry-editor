@@ -1,0 +1,130 @@
+<!doctype html>
+<html lang="de">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta
+      name="description"
+      content="BlockBerry – visuelle Mini-SPS- und IoT-Eskalationsabläufe als Berry-Skript."
+    />
+    <title>BlockBerry Editor</title>
+  </head>
+  <body>
+    <div class="app-shell">
+      <header class="topbar">
+        <div class="brand" aria-label="BlockBerry Editor">
+          <span class="brand-mark" aria-hidden="true">
+            <span></span><span></span><span></span>
+          </span>
+          <span class="brand-name">Block<span>Berry</span></span>
+          <span class="brand-tag">IoT Flow Studio</span>
+        </div>
+
+        <label class="project-name">
+          <span>Projekt</span>
+          <input id="project-name" value="Meine Steuerung" maxlength="64" />
+        </label>
+
+        <nav class="top-actions" aria-label="Projektaktionen">
+          <button id="new-project" class="button ghost" type="button">Neu</button>
+          <button id="load-project" class="button ghost" type="button">Öffnen</button>
+          <button id="save-project" class="button ghost" type="button">Speichern</button>
+          <span class="action-divider"></span>
+          <button id="export-script" class="button secondary" type="button">
+            Berry exportieren
+          </button>
+          <button id="open-deploy" class="button primary" type="button">
+            <span class="button-dot"></span>
+            Auf Gerät
+          </button>
+        </nav>
+      </header>
+
+      <main class="workspace-layout">
+        <section class="editor-panel" aria-label="Blockly-Editor">
+          <div class="panel-heading">
+            <div>
+              <span class="eyebrow">Ablaufsteuerung</span>
+              <h1>Visueller Programmablauf</h1>
+            </div>
+            <div class="editor-tools">
+              <span class="autosave-state"><span></span> Lokal gespeichert</span>
+              <button id="center-workspace" class="icon-button" type="button" title="Blöcke zentrieren">
+                Zentrieren
+              </button>
+            </div>
+          </div>
+          <div id="blockly-editor"></div>
+        </section>
+
+        <aside class="code-panel" aria-label="Berry-Codevorschau">
+          <div class="code-heading">
+            <div>
+              <span class="eyebrow mint">Live-Ausgabe</span>
+              <h2>Berry Script</h2>
+            </div>
+            <button id="copy-code" class="icon-button dark" type="button">Kopieren</button>
+          </div>
+
+          <div class="runtime-badge">
+            <span class="pulse"></span>
+            <div>
+              <strong>Runtime-Vertrag aktiv</strong>
+              <small>sps · escalation · od · canopen · ui</small>
+            </div>
+          </div>
+
+          <div class="code-wrap">
+            <pre><code id="berry-code"># Generator wird initialisiert …</code></pre>
+          </div>
+
+          <div class="code-stats">
+            <span><strong id="line-count">0</strong> Zeilen</span>
+            <span><strong id="byte-count">0</strong> Bytes</span>
+            <span class="syntax-ok"><i></i> Generator bereit</span>
+          </div>
+        </aside>
+      </main>
+
+      <footer class="statusbar">
+        <span><i class="status-ready"></i> BlockBerry bereit</span>
+        <span>Blockly → Berry</span>
+        <span id="block-count">0 Blöcke</span>
+      </footer>
+    </div>
+
+    <input id="project-file" type="file" accept=".json,.blockberry.json,application/json" hidden />
+
+    <dialog id="deploy-dialog">
+      <form id="deploy-form">
+        <div class="dialog-heading">
+          <div>
+            <span class="eyebrow">Deployment</span>
+            <h2>Auf Gerät übertragen</h2>
+          </div>
+          <button id="close-deploy" class="dialog-close" type="button" aria-label="Schließen">×</button>
+        </div>
+        <p>
+          Das generierte Berry-Skript wird per HTTP PUT an den Geräte-Endpunkt gesendet.
+        </p>
+        <label>
+          Geräte-Endpunkt
+          <input
+            id="device-endpoint"
+            type="url"
+            placeholder="http://192.168.1.50/api/scripts/main.be"
+            required
+          />
+        </label>
+        <div id="deploy-result" class="deploy-result" role="status"></div>
+        <div class="dialog-actions">
+          <button id="cancel-deploy" class="button ghost dark-text" type="button">Abbrechen</button>
+          <button class="button primary" type="submit">Skript übertragen</button>
+        </div>
+      </form>
+    </dialog>
+
+    <div id="toast" class="toast" role="status" aria-live="polite"></div>
+    <script type="module" src="/web/main.ts"></script>
+  </body>
+</html>
