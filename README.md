@@ -15,6 +15,7 @@ Programme übernommen.
 - digitale Ein- und Ausgänge
 - zustandsbehaftete Eskalation mit Stufe und Sperrzeit
 - Signalisierung und Messwerterfassung
+- ThingsBoard-Telemetrie, Geräteattribute und Alarm-Lifecycle
 - lokales Object Dictionary sowie CANopen SDO/NMT
 - eingeschränkte LVGL-Operationen ohne Rohcode oder frei wählbare Methoden
 - Berry-Generatoren für die benötigten Blockly-Logik-, Mathematik-, Text- und
@@ -72,6 +73,12 @@ sps.output(channel, value)
 escalation.raise_if(rule_id, condition, level, message, cooldown_s)
 signal.set(name, state)
 monitor.record(metric, value, unit)
+
+thingsboard.telemetry(key, value)
+thingsboard.attribute(key, value)
+thingsboard.alarm(type, severity, details)
+thingsboard.clear_alarm(type)
+thingsboard.connected()
 
 od.read(index, subindex)
 od.write(index, subindex, value)

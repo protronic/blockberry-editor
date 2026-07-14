@@ -82,4 +82,33 @@ describe('BerryGenerator', () => {
     expect(code).toContain('math.pow(2, 8)');
     expect(code).not.toContain('**');
   });
+
+  it('generates ThingsBoard telemetry and alarm lifecycle calls', () => {
+    const workspace = new Blockly.Workspace();
+    const telemetry = workspace.newBlock('thingsboard_telemetry');
+    telemetry.setFieldValue('temperature', 'KEY');
+    const number = workspace.newBlock('math_number');
+    number.setFieldValue(72.5, 'NUM');
+    telemetry.getInput('VALUE')!.connection!.connect(number.outputConnection!);
+
+    const alarm = workspace.newBlock('thingsboard_alarm_create');
+    alarm.setFieldValue('Overheat', 'ALARM_TYPE');
+    alarm.setFieldValue('CRITICAL', 'SEVERITY');
+    telemetry.nextConnection!.connect(alarm.previousConnection!);
+    const details = workspace.newBlock('text');
+    details.setFieldValue('Temperatur zu hoch', 'TEXT');
+    alarm.getInput('DETAILS')!.connection!.connect(details.outputConnection!);
+
+    const clear = workspace.newBlock('thingsboard_alarm_clear');
+    clear.setFieldValue('Overheat', 'ALARM_TYPE');
+    alarm.nextConnection!.connect(clear.previousConnection!);
+
+    const code = new BerryGenerator().workspaceToCode(workspace);
+
+    expect(code).toContain('thingsboard.telemetry("temperature", 72.5)');
+    expect(code).toContain(
+      'thingsboard.alarm("Overheat", "CRITICAL", "Temperatur zu hoch")',
+    );
+    expect(code).toContain('thingsboard.clear_alarm("Overheat")');
+  });
 });

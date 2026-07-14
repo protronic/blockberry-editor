@@ -244,6 +244,18 @@ export class BerryGenerator extends LuaGenerator {
       `signal.set(${this.quote_(block.getFieldValue('SIGNAL') ?? '')}, ${this.quote_(block.getFieldValue('STATE') ?? 'off')})\n`;
     this.forBlock.monitor_value = (block) =>
       `monitor.record(${this.quote_(block.getFieldValue('METRIC') ?? '')}, ${value(this, block, 'VALUE')}, ${this.quote_(block.getFieldValue('UNIT') ?? '')})\n`;
+    this.forBlock.thingsboard_telemetry = (block) =>
+      `thingsboard.telemetry(${this.quote_(block.getFieldValue('KEY') ?? '')}, ${value(this, block, 'VALUE')})\n`;
+    this.forBlock.thingsboard_attribute = (block) =>
+      `thingsboard.attribute(${this.quote_(block.getFieldValue('KEY') ?? '')}, ${value(this, block, 'VALUE')})\n`;
+    this.forBlock.thingsboard_alarm_create = (block) =>
+      `thingsboard.alarm(${this.quote_(block.getFieldValue('ALARM_TYPE') ?? '')}, ${this.quote_(block.getFieldValue('SEVERITY') ?? 'WARNING')}, ${value(this, block, 'DETAILS', '""')})\n`;
+    this.forBlock.thingsboard_alarm_clear = (block) =>
+      `thingsboard.clear_alarm(${this.quote_(block.getFieldValue('ALARM_TYPE') ?? '')})\n`;
+    this.forBlock.thingsboard_connected = () => [
+      'thingsboard.connected()',
+      BerryOrder.MEMBER,
+    ];
     this.forBlock.od_read = (block) => [
       `od.read(${odIndex(block.getFieldValue('INDEX'))}, ${numberField(block, 'SUBINDEX')})`,
       BerryOrder.MEMBER,

@@ -103,6 +103,68 @@ const definitions = Blockly.common.createBlockDefinitionsFromJsonArray([
     colour: 45,
   },
   {
+    type: 'thingsboard_telemetry',
+    message0: 'ThingsBoard Telemetrie %1 = %2',
+    args0: [
+      {type: 'field_input', name: 'KEY', text: 'temperature'},
+      {type: 'input_value', name: 'VALUE'},
+    ],
+    previousStatement: null,
+    nextStatement: null,
+    colour: 185,
+    tooltip: 'Sendet einen Zeitreihenwert an ThingsBoard.',
+  },
+  {
+    type: 'thingsboard_attribute',
+    message0: 'ThingsBoard Attribut %1 = %2',
+    args0: [
+      {type: 'field_input', name: 'KEY', text: 'firmware'},
+      {type: 'input_value', name: 'VALUE'},
+    ],
+    previousStatement: null,
+    nextStatement: null,
+    colour: 185,
+    tooltip: 'Veröffentlicht ein clientseitiges Geräteattribut.',
+  },
+  {
+    type: 'thingsboard_alarm_create',
+    message0: 'ThingsBoard Alarm %1 Stufe %2',
+    args0: [
+      {type: 'field_input', name: 'ALARM_TYPE', text: 'Grenzwert'},
+      {
+        type: 'field_dropdown',
+        name: 'SEVERITY',
+        options: [
+          ['Info', 'INDETERMINATE'],
+          ['Warnung', 'WARNING'],
+          ['Leicht', 'MINOR'],
+          ['Schwer', 'MAJOR'],
+          ['Kritisch', 'CRITICAL'],
+        ],
+      },
+    ],
+    message1: 'Details %1',
+    args1: [{type: 'input_value', name: 'DETAILS', check: 'String'}],
+    previousStatement: null,
+    nextStatement: null,
+    colour: 185,
+    tooltip: 'Erzeugt oder aktualisiert einen Alarm gleichen Typs.',
+  },
+  {
+    type: 'thingsboard_alarm_clear',
+    message0: 'ThingsBoard Alarm %1 aufheben',
+    args0: [{type: 'field_input', name: 'ALARM_TYPE', text: 'Grenzwert'}],
+    previousStatement: null,
+    nextStatement: null,
+    colour: 185,
+  },
+  {
+    type: 'thingsboard_connected',
+    message0: 'ThingsBoard verbunden',
+    output: 'Boolean',
+    colour: 185,
+  },
+  {
     type: 'od_read',
     message0: 'OD lesen Index %1 Subindex %2',
     args0: [

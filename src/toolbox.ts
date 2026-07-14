@@ -32,6 +32,18 @@ export const blockBerryToolbox: Blockly.utils.toolbox.ToolboxDefinition = {
     },
     {
       kind: 'category',
+      name: 'ThingsBoard',
+      colour: '185',
+      contents: [
+        {kind: 'block', type: 'thingsboard_telemetry'},
+        {kind: 'block', type: 'thingsboard_attribute'},
+        {kind: 'block', type: 'thingsboard_alarm_create'},
+        {kind: 'block', type: 'thingsboard_alarm_clear'},
+        {kind: 'block', type: 'thingsboard_connected'},
+      ],
+    },
+    {
+      kind: 'category',
       name: 'OD & CANopen',
       colour: '285',
       contents: [
