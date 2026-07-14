@@ -22,7 +22,8 @@
     "build:web": "vite build",
     "preview": "vite preview",
     "test": "bun test",
-    "check": "bun run build && bun run test"
+    "check": "bun run build && bun run test",
+    "deploy": "bun run test && bun deploy.ts"
   },
   "repository": {
     "type": "git",
