@@ -59,5 +59,3 @@ target_compile_options(app PRIVATE
   -Wno-missing-field-initializers
   -Wno-sign-compare
 )
-
-zephyr_link_libraries(m)

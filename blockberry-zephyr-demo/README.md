@@ -118,4 +118,5 @@ die Aliase, meldet Berry einen `io_error`.
 
 Die Demo akzeptiert aktuell einzelne Befehlszeilen bis 255 Byte. Mehrzeilige
 Funktions- oder Klassendefinitionen sind noch nicht Bestandteil dieses
-Spielports.
+Spielports. Das Berry-Mathematikmodul ist in diesem kleinen Build deaktiviert;
+Grundrechenarten funktionieren, `import math` jedoch nicht.
