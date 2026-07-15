@@ -7,6 +7,18 @@
 	aliases {
 		die-temp0 = &die_temp;
 	};
+
+	/*
+	 * The closed WBA6 link-layer library installs HASH_IRQn (66) as its
+	 * low-priority software interrupt. Represent it in DT so Zephyr's
+	 * automatic NUM_IRQS calculation reserves that vector.
+	 */
+	radio_irq_reservation {
+		compatible = "zephyr,irq-reservation";
+		interrupt-parent = <&nvic>;
+		interrupts = <66 0>;
+		status = "okay";
+	};
 };
 
 &die_temp {
