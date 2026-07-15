@@ -5,7 +5,6 @@
 
 #include <zephyr/console/console.h>
 #include <zephyr/kernel.h>
-#include <zephyr/sys/printk.h>
 
 struct repl_message {
 	uint16_t length;
@@ -89,7 +88,7 @@ void bb_transport_write(const char *data, size_t length)
 		return;
 	}
 
-	printk("%.*s", (int)length, data);
+	(void)console_write(NULL, data, length);
 
 #if defined(CONFIG_BT)
 	bb_ble_nus_write((const uint8_t *)data, length);
