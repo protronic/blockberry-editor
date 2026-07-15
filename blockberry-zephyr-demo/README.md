@@ -97,13 +97,13 @@ Gemessen mit Zephyr 4.4.1, Berry 1.1.0 und Zephyr SDK 1.0.1:
 
 | Target | Flash | RAM |
 |---|---:|---:|
-| `stm32wb5mm_dk/stm32wb55xx` | 188.928 B | 73.732 B |
-| `stm32wb5mmg/stm32wb55xx` | 164.888 B | 72.132 B |
-| `stm32wba65i_dk1/stm32wba65xx` | 294.044 B | 90.908 B |
+| `stm32wb5mm_dk/stm32wb55xx` | 189.412 B | 81.924 B |
+| `stm32wb5mmg/stm32wb55xx` | 165.372 B | 80.324 B |
+| `stm32wba65i_dk1/stm32wba65xx` | 294.392 B | 99.100 B |
 
 Die Werte enthalten Zephyr, BLE-Host/Controller-Anbindung, Berry-Compiler,
-REPL, Logging und zwei getrennte Heaps: 32 KiB für libc/Berry und 8 KiB
-Zephyr-Kernelheap.
+REPL, den statischen 8-KiB-Skriptpuffer, Logging und zwei getrennte Heaps:
+32 KiB für libc/Berry und 8 KiB Zephyr-Kernelheap.
 
 ## BLE GATT/NUS
 
