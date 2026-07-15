@@ -30,6 +30,7 @@
           <button id="load-project" class="button ghost" type="button">Öffnen</button>
           <button id="save-project" class="button ghost" type="button">Speichern</button>
           <span class="action-divider"></span>
+          <button id="open-repl" class="button secondary" type="button">Berry REPL</button>
           <button id="export-script" class="button secondary" type="button">
             Berry exportieren
           </button>
@@ -136,6 +137,57 @@
     </div>
 
     <input id="project-file" type="file" accept=".json,.blockberry.json,application/json" hidden />
+
+    <dialog id="repl-dialog" class="repl-dialog">
+      <div class="repl-shell">
+        <div class="dialog-heading">
+          <div>
+            <span class="eyebrow">Live-Verbindung</span>
+            <h2>Berry REPL</h2>
+          </div>
+          <button id="close-repl" class="dialog-close" type="button" aria-label="Schließen">×</button>
+        </div>
+
+        <div class="repl-connect-row">
+          <div class="repl-transport-tabs" role="tablist" aria-label="REPL-Transport">
+            <button class="repl-transport active" data-repl-transport="bluetooth" type="button">
+              BLE NUS
+            </button>
+            <button class="repl-transport" data-repl-transport="websocket" type="button">
+              Host WebSocket
+            </button>
+          </div>
+          <button id="repl-connect" class="button primary" type="button">Verbinden</button>
+        </div>
+
+        <label id="repl-ws-settings" class="repl-ws-settings hidden">
+          WebSocket-Adresse
+          <input id="repl-ws-url" value="ws://localhost:8765/repl" spellcheck="false" />
+        </label>
+
+        <div class="repl-statusbar">
+          <span id="repl-status">NUS nicht verbunden</span>
+          <small>NUS 6E400001 · RX 0002 · TX 0003</small>
+        </div>
+
+        <pre id="repl-output" class="repl-output" aria-live="polite"><span class="system">BlockBerry Remote REPL
+Verbinde ein Gerät oder den native_sim-Host.
+</span></pre>
+
+        <form id="repl-form" class="repl-command-row">
+          <span>&gt;</span>
+          <input
+            id="repl-command"
+            placeholder="1 + 2"
+            autocomplete="off"
+            autocapitalize="off"
+            spellcheck="false"
+            disabled
+          />
+          <button type="submit">Senden</button>
+        </form>
+      </div>
+    </dialog>
 
     <dialog id="deploy-dialog">
       <form id="deploy-form">

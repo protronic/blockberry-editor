@@ -6,6 +6,7 @@ import {
   blockBerryToolbox,
   registerBlockBerryBlocks,
 } from '../src/index.ts';
+import {mountReplPanel} from './repl/panel.ts';
 import {mountSimulator} from './simulator/panel.ts';
 import './styles.css';
 
@@ -92,6 +93,7 @@ const endpointInput = element<HTMLInputElement>('device-endpoint');
 const deployResult = element<HTMLElement>('deploy-result');
 const toast = element<HTMLElement>('toast');
 const simulator = mountSimulator(workspace);
+mountReplPanel();
 
 let generatedCode = '';
 let updateTimer = 0;

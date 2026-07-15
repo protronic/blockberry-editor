@@ -1,0 +1,25 @@
+mainmenu "BlockBerry Zephyr demo"
+
+source "Kconfig.zephyr"
+
+menu "BlockBerry REPL"
+
+config BLOCKBERRY_REPL_LINE_SIZE
+	int "Maximum Berry REPL line length"
+	default 256
+	range 64 1024
+
+config BLOCKBERRY_REPL_QUEUE_DEPTH
+	int "Queued REPL lines"
+	default 8
+	range 2 32
+
+config BLOCKBERRY_NUS_REQUIRE_ENCRYPTION
+	bool "Require an encrypted BLE link for NUS writes"
+	depends on BT
+	default n
+	help
+	  Protect the RX characteristic with encrypted write permissions.
+	  Leave disabled only for local development.
+
+endmenu
