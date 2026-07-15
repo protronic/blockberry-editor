@@ -4,7 +4,7 @@ Diese eigenständige Zephyr-Anwendung bettet Berry 1.1 ein und stellt eine
 zeilenbasierte REPL über zwei Ports bereit:
 
 - UART/stdin für lokale Tests und `native_sim`
-- Bluetooth LE mit den Nordic-UART-Service-UUIDs für STM32WBA
+- Bluetooth LE mit den Nordic-UART-Service-UUIDs für STM32WB/WBA
 
 Die Berry-VM läuft ausschließlich im Hauptthread. UART- und BLE-Callbacks
 stellen vollständige Zeilen in eine Message Queue. Dadurch greifen die
@@ -45,18 +45,36 @@ ws://localhost:8765/repl
 
 In der BlockBerry-Webapp **Berry REPL → Host WebSocket** auswählen.
 
-## STM32WBA-Port
+## STM32WB5MM- und STM32WBA65-Ports
 
-Zephyr 4.4.1 besitzt fertige Targets für WBA55 und WBA65:
+Die Anwendung nutzt zwei getrennte, offiziell dokumentierte Zephyr-Targets.
+
+Für das STM32WB5MM-DK:
+
+```sh
+west build -d build-wb5mm -b stm32wb5mm_dk/stm32wb55xx \
+  blockberry-zephyr-demo -- \
+  -DEXTRA_CONF_FILE=configs/ble.conf
+```
+
+Für ein Carrier-Design mit dem reinen STM32WB5MMG-Modul:
+
+```sh
+west build -d build-wb5mmg -b stm32wb5mmg/stm32wb55xx \
+  blockberry-zephyr-demo -- \
+  -DEXTRA_CONF_FILE=configs/ble.conf
+```
+
+Der Cortex-M0+-Funkkern des STM32WB5MMG muss vorher mit einer kompatiblen
+STM32WB-**HCI-Layer**-Coprocessor-Binary programmiert werden. Neuere
+„Full Stack“-Binaries sind laut Zephyr-Dokumentation nicht kompatibel.
+
+Für das STM32WBA65I-DK1:
 
 ```sh
 west blobs fetch hal_stm32
 
-west build -d build-wba55 -b nucleo_wba55cg/stm32wba55xx \
-  blockberry-zephyr-demo -- \
-  -DEXTRA_CONF_FILE=configs/ble.conf
-
-west build -d build-wba65 -b nucleo_wba65ri/stm32wba65xx \
+west build -d build-wba65 -b stm32wba65i_dk1/stm32wba65xx \
   blockberry-zephyr-demo -- \
   -DEXTRA_CONF_FILE=configs/ble.conf
 ```
@@ -64,19 +82,14 @@ west build -d build-wba65 -b nucleo_wba65ri/stm32wba65xx \
 Danach mit dem zum Board passenden Runner flashen:
 
 ```sh
-west flash -d build-wba55
+west flash -d build-wb5mm
+west flash -d build-wba65
 ```
 
-Der neue **STM32WBA5MMG** enthält einen STM32WBA55UG. Zephyr führt in 4.4.1
-noch kein fertiges Board für ein konkretes WBA5MMG-Carrier-Design. Die
-Anwendung selbst ist SoC-unabhängig; für ein Produktboard muss eine
-Boarddefinition mit dessen Flash-Aufteilung, Quarzen und UART-/GPIO-Pins
-ergänzt werden. Als Referenz dient `nucleo_wba55cg/stm32wba55xx`.
-
-Ein Produkt beziehungsweise Zephyr-Target namens **STM32WBA6MM** ist derzeit
-nicht dokumentiert. Für die WBA6-Familie wird deshalb der vorhandene
-STM32WBA65-Port als Referenz verwendet. Eine erfundene `wba6mm`-Board-ID ist
-bewusst nicht enthalten.
+Das WBA65I-DK1 besitzt die Aliase `led0` und `sw0`, sodass `led()` und
+`button()` direkt funktionieren. Beim reinen WB5MMG-Modultarget hängen diese
+Funktionen von den Aliasen des Carrier-Devicetrees ab. Die BLE-REPL ist davon
+unabhängig.
 
 ## BLE GATT/NUS
 

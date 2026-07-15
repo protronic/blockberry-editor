@@ -59,10 +59,10 @@ in [`docs/simulator.md`](docs/simulator.md).
 ### Zephyr-/Berry-Demo
 
 [`blockberry-zephyr-demo`](blockberry-zephyr-demo/README.md) bettet die
-Berry-VM in eine Zephyr-Anwendung ein. Für STM32WBA stellt sie die REPL über
-BLE GATT mit den Nordic-UART-Service-UUIDs bereit. Der `native_sim`-Build wird
-über eine kleine Bun-Bridge als `ws://localhost:8765/repl` mit der Webapp
-verbunden.
+Berry-VM in eine Zephyr-Anwendung ein. Für STM32WB5MMG/STM32WB5MM-DK und
+STM32WBA65I-DK1 stellt sie die REPL über BLE GATT mit den
+Nordic-UART-Service-UUIDs bereit. Der `native_sim`-Build wird über eine kleine
+Bun-Bridge als `ws://localhost:8765/repl` mit der Webapp verbunden.
 
 ### Generator in einer eigenen Oberfläche
 
