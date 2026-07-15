@@ -91,6 +91,20 @@ Das WBA65I-DK1 besitzt die Aliase `led0` und `sw0`, sodass `led()` und
 Funktionen von den Aliasen des Carrier-Devicetrees ab. Die BLE-REPL ist davon
 unabhängig.
 
+### Verifizierte Buildgrößen
+
+Gemessen mit Zephyr 4.4.1, Berry 1.1.0 und Zephyr SDK 1.0.1:
+
+| Target | Flash | RAM |
+|---|---:|---:|
+| `stm32wb5mm_dk/stm32wb55xx` | 188.928 B | 73.732 B |
+| `stm32wb5mmg/stm32wb55xx` | 164.888 B | 72.132 B |
+| `stm32wba65i_dk1/stm32wba65xx` | 294.044 B | 90.908 B |
+
+Die Werte enthalten Zephyr, BLE-Host/Controller-Anbindung, Berry-Compiler,
+REPL, Logging und zwei getrennte Heaps: 32 KiB für libc/Berry und 8 KiB
+Zephyr-Kernelheap.
+
 ## BLE GATT/NUS
 
 | Funktion | UUID | Zugriff |
