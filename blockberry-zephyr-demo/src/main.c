@@ -1,4 +1,5 @@
 #include <errno.h>
+#include <stdbool.h>
 #include <string.h>
 
 #include <zephyr/kernel.h>
@@ -13,8 +14,15 @@ int main(void)
 {
 	static const char banner[] =
 		"\nBlockBerry Zephyr REPL\n"
-		"Try: 1 + 2, millis(), led(true), button()\n";
+		"Try: 1 + 2, millis(), led(true), button()\n"
+		"Multi-line upload: :begin ... :end\n";
+	static const char script_ready[] = "[script] receiving\n";
+	static const char script_aborted[] = "[script] aborted\n";
+	static const char script_too_large[] = "[script] too large; aborted\n";
+	static char script[CONFIG_BLOCKBERRY_REPL_SCRIPT_SIZE];
 	char line[CONFIG_BLOCKBERRY_REPL_LINE_SIZE];
+	size_t script_length = 0;
+	bool collecting_script = false;
 	int err;
 
 	err = bb_transport_init();
@@ -43,7 +51,40 @@ int main(void)
 	for (;;) {
 		err = bb_transport_receive(line, sizeof(line));
 		if (err > 0) {
-			(void)bb_repl_eval(line, (size_t)err);
+			if (!collecting_script && strcmp(line, ":begin") == 0) {
+				collecting_script = true;
+				script_length = 0;
+				bb_transport_write(script_ready, sizeof(script_ready) - 1);
+				continue;
+			}
+
+			if (collecting_script && strcmp(line, ":abort") == 0) {
+				collecting_script = false;
+				script_length = 0;
+				bb_transport_write(script_aborted, sizeof(script_aborted) - 1);
+			} else if (collecting_script && strcmp(line, ":end") == 0) {
+				collecting_script = false;
+				if (script_length > 0) {
+					(void)bb_repl_eval(script, script_length);
+				}
+				script_length = 0;
+			} else if (collecting_script) {
+				size_t line_length = (size_t)err;
+
+				if (script_length + line_length + 1 >= sizeof(script)) {
+					collecting_script = false;
+					script_length = 0;
+					bb_transport_write(script_too_large,
+							   sizeof(script_too_large) - 1);
+				} else {
+					memcpy(script + script_length, line, line_length);
+					script_length += line_length;
+					script[script_length++] = '\n';
+					continue;
+				}
+			} else {
+				(void)bb_repl_eval(line, (size_t)err);
+			}
 		} else if (err != -EINTR) {
 			LOG_WRN("REPL receive failed: %d", err);
 		}

@@ -92,10 +92,10 @@ const deployForm = element<HTMLFormElement>('deploy-form');
 const endpointInput = element<HTMLInputElement>('device-endpoint');
 const deployResult = element<HTMLElement>('deploy-result');
 const toast = element<HTMLElement>('toast');
-const simulator = mountSimulator(workspace);
-mountReplPanel();
-
 let generatedCode = '';
+const simulator = mountSimulator(workspace);
+mountReplPanel(() => generatedCode);
+
 let updateTimer = 0;
 let toastTimer = 0;
 

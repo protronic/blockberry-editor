@@ -143,7 +143,21 @@ button()
 Die GPIO-Funktionen verwenden die Devicetree-Aliase `led0` und `sw0`. Fehlen
 die Aliase, meldet Berry einen `io_error`.
 
-Die Demo akzeptiert aktuell einzelne Befehlszeilen bis 255 Byte. Mehrzeilige
-Funktions- oder Klassendefinitionen sind noch nicht Bestandteil dieses
-Spielports. Das Berry-Mathematikmodul ist in diesem kleinen Build deaktiviert;
+Einzelne REPL-Befehle dürfen maximal 255 Byte lang sein. Mehrzeilige Skripte
+werden mit diesem einfachen Transportprotokoll übertragen:
+
+```text
+:begin
+var answer = 40
+answer += 2
+print(answer)
+:end
+```
+
+Zwischen `:begin` und `:end` sammelt die Firmware bis zu 8191 Byte und
+kompiliert den gesamten Puffer erst bei `:end`. `:abort` verwirft eine laufende
+Übertragung. Die Webapp verwendet dieses Protokoll automatisch über BLE und
+WebSocket.
+
+Das Berry-Mathematikmodul ist in diesem kleinen Build deaktiviert;
 Grundrechenarten funktionieren, `import math` jedoch nicht.

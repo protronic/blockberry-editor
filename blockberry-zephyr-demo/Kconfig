@@ -14,6 +14,13 @@ config BLOCKBERRY_REPL_QUEUE_DEPTH
 	default 8
 	range 2 32
 
+config BLOCKBERRY_REPL_SCRIPT_SIZE
+	int "Maximum uploaded Berry script size"
+	default 8192
+	range 1024 32768
+	help
+	  Static buffer used by the :begin/:end multi-line upload protocol.
+
 config BLOCKBERRY_NUS_REQUIRE_ENCRYPTION
 	bool "Require an encrypted BLE link for NUS writes"
 	depends on BT

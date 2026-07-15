@@ -789,6 +789,7 @@ dialog::backdrop {
 }
 
 .repl-connect-row,
+.repl-header-actions,
 .repl-transport-tabs,
 .repl-statusbar,
 .repl-command-row {
@@ -799,6 +800,16 @@ dialog::backdrop {
 .repl-connect-row {
   justify-content: space-between;
   gap: 12px;
+}
+
+.repl-header-actions {
+  gap: 7px;
+}
+
+.repl-header-actions .button:disabled {
+  cursor: not-allowed;
+  opacity: 0.4;
+  transform: none;
 }
 
 .repl-transport-tabs {

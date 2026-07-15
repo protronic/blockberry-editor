@@ -40,6 +40,7 @@ Die Webapp bietet:
 - konfigurierbaren HTTP-PUT-Upload an ein Gerät
 - integrierten Mini-SPS-Simulator mit Tastern, LEDs und Ereignisprotokoll
 - Remote-Berry-REPL über BLE NUS oder eine lokale WebSocket-Bridge
+- Übertragung und Ausführung des aktuell erzeugten Berry-Skripts aus der REPL
 
 Der Produktions-Build liegt nach `bun run build` in `dist/web`.
 
@@ -63,6 +64,9 @@ Berry-VM in eine Zephyr-Anwendung ein. Für STM32WB5MMG/STM32WB5MM-DK und
 STM32WBA65I-DK1 stellt sie die REPL über BLE GATT mit den
 Nordic-UART-Service-UUIDs bereit. Der `native_sim`-Build wird über eine kleine
 Bun-Bridge als `ws://localhost:8765/repl` mit der Webapp verbunden.
+Die Schaltfläche **Editor-Skript ausführen** überträgt das aktuelle
+Generatorergebnis als gerahmtes Mehrzeilenskript und startet es in derselben
+Berry-VM.
 
 ### Generator in einer eigenen Oberfläche
 

@@ -1,6 +1,7 @@
 #include "berry_repl.h"
 
 #include <errno.h>
+#include <stdbool.h>
 #include <stdio.h>
 #include <string.h>
 
@@ -75,20 +76,29 @@ int bb_repl_eval(const char *source, size_t length)
 {
 	char expression[CONFIG_BLOCKBERRY_REPL_LINE_SIZE + 16];
 	int result;
+	bool try_expression;
 
 	if (repl_vm == NULL || source == NULL || length == 0) {
 		return -EINVAL;
 	}
-	if (length >= CONFIG_BLOCKBERRY_REPL_LINE_SIZE) {
+	if (length >= CONFIG_BLOCKBERRY_REPL_SCRIPT_SIZE) {
 		return -EMSGSIZE;
 	}
 
-	snprintf(expression, sizeof(expression), "return (%.*s)", (int)length, source);
-	result = be_loadbuffer(repl_vm, "repl", expression, strlen(expression));
+	try_expression = length < CONFIG_BLOCKBERRY_REPL_LINE_SIZE &&
+			 memchr(source, '\n', length) == NULL;
+	if (try_expression) {
+		snprintf(expression, sizeof(expression), "return (%.*s)",
+			 (int)length, source);
+		result = be_loadbuffer(repl_vm, "repl", expression,
+				       strlen(expression));
 
-	if (be_getexcept(repl_vm, result) == BE_SYNTAX_ERROR) {
-		be_pop(repl_vm, 2);
-		result = be_loadbuffer(repl_vm, "repl", source, length);
+		if (be_getexcept(repl_vm, result) == BE_SYNTAX_ERROR) {
+			be_pop(repl_vm, 2);
+			result = be_loadbuffer(repl_vm, "repl", source, length);
+		}
+	} else {
+		result = be_loadbuffer(repl_vm, "script", source, length);
 	}
 
 	if (result != BE_OK) {
