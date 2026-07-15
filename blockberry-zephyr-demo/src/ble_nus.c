@@ -93,6 +93,16 @@ BT_GATT_SERVICE_DEFINE(nus_service,
 			       NUS_RX_PERMISSIONS, NULL, rx_written, NULL)
 );
 
+static const struct bt_data advertising_data[] = {
+	BT_DATA_BYTES(BT_DATA_FLAGS, BT_LE_AD_GENERAL | BT_LE_AD_NO_BREDR),
+	BT_DATA(BT_DATA_NAME_COMPLETE, CONFIG_BT_DEVICE_NAME,
+		sizeof(CONFIG_BT_DEVICE_NAME) - 1),
+};
+
+static const struct bt_data scan_response[] = {
+	BT_DATA_BYTES(BT_DATA_UUID128_ALL, BT_UUID_NUS_SERVICE_VAL),
+};
+
 static void connected(struct bt_conn *conn, uint8_t error)
 {
 	if (error != 0U) {
@@ -131,14 +141,6 @@ BT_CONN_CB_DEFINE(connection_callbacks) = {
 
 int bb_ble_nus_init(void)
 {
-	static const struct bt_data advertising_data[] = {
-		BT_DATA_BYTES(BT_DATA_FLAGS, BT_LE_AD_GENERAL | BT_LE_AD_NO_BREDR),
-		BT_DATA(BT_DATA_NAME_COMPLETE, CONFIG_BT_DEVICE_NAME,
-			sizeof(CONFIG_BT_DEVICE_NAME) - 1),
-	};
-	static const struct bt_data scan_response[] = {
-		BT_DATA_BYTES(BT_DATA_UUID128_ALL, BT_UUID_NUS_SERVICE_VAL),
-	};
 	int err;
 
 	err = bt_enable(NULL);
