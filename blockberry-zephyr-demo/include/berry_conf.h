@@ -6,7 +6,7 @@
 #define BE_DEBUG                         0
 #define BE_INTGER_TYPE                   2
 #define BE_USE_SINGLE_FLOAT              1
-#define BE_USE_PRECOMPILED_OBJECT        0
+#define BE_USE_PRECOMPILED_OBJECT        1
 #define BE_DEBUG_RUNTIME_INFO            1
 #define BE_DEBUG_VAR_INFO                0
 #define BE_USE_PERF_COUNTERS             0
