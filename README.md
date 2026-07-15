@@ -50,11 +50,10 @@ Signale als LEDs. **Start** führt Initialisierung und SPS-Zyklen mit den im
 Projekt eingestellten Intervallen aus. Änderungen am Blockprogramm halten eine
 laufende Simulation automatisch an.
 
-Zephyr selbst wird dabei nicht als Browser-WASM ausgegeben. Der aktuelle
-Simulator führt den von BlockBerry unterstützten Sprachumfang direkt aus. Die
-geplante exakte Laufzeit verwendet den offiziellen Berry-C-Interpreter als
-WASM und dieselbe Host-ABI wie das spätere Zephyr-Modul. Details und
-Sicherheitsgrenzen stehen in [`docs/simulator.md`](docs/simulator.md).
+Der aktuelle Simulator führt den von BlockBerry unterstützten Sprachumfang
+direkt aus. Eine spätere exakte Laufzeit kann den offiziellen Berry-C-
+Interpreter als Browser-WASM verwenden. Details und Sicherheitsgrenzen stehen
+in [`docs/simulator.md`](docs/simulator.md).
 
 ### Generator in einer eigenen Oberfläche
 
