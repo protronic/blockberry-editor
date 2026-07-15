@@ -4,7 +4,13 @@
 #include <string.h>
 
 #include <zephyr/console/console.h>
+#include <zephyr/device.h>
+#include <zephyr/devicetree.h>
+#include <zephyr/drivers/uart.h>
 #include <zephyr/kernel.h>
+
+static const struct device *const console_device =
+	DEVICE_DT_GET(DT_CHOSEN(zephyr_console));
 
 struct repl_message {
 	uint16_t length;
@@ -88,7 +94,11 @@ void bb_transport_write(const char *data, size_t length)
 		return;
 	}
 
-	(void)console_write(NULL, data, length);
+	if (device_is_ready(console_device)) {
+		for (size_t index = 0; index < length; ++index) {
+			uart_poll_out(console_device, data[index]);
+		}
+	}
 
 #if defined(CONFIG_BT)
 	bb_ble_nus_write((const uint8_t *)data, length);
