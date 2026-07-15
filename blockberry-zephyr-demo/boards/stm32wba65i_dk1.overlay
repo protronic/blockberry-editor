@@ -1,0 +1,8 @@
+/*
+ * The STM32WBA Bluetooth controller enables temperature-based RF
+ * calibration. Its Kconfig dependency requires the die temperature sensor.
+ */
+
+&die_temp {
+	status = "okay";
+};
