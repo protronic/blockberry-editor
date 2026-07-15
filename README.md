@@ -38,8 +38,23 @@ Die Webapp bietet:
 - Import und Export von `.blockberry.json`-Projektdateien
 - Export des generierten `.be`-Skripts
 - konfigurierbaren HTTP-PUT-Upload an ein Gerät
+- integrierten Mini-SPS-Simulator mit Tastern, LEDs und Ereignisprotokoll
 
 Der Produktions-Build liegt nach `bun run build` in `dist/web`.
+
+### Simulator
+
+In der rechten Vorschau öffnet der Tab **Simulator** die virtuelle IO-Front.
+Digitale Eingangsblöcke erscheinen dort als Taster, digitale Ausgänge und
+Signale als LEDs. **Start** führt Initialisierung und SPS-Zyklen mit den im
+Projekt eingestellten Intervallen aus. Änderungen am Blockprogramm halten eine
+laufende Simulation automatisch an.
+
+Zephyr selbst wird dabei nicht als Browser-WASM ausgegeben. Der aktuelle
+Simulator führt den von BlockBerry unterstützten Sprachumfang direkt aus. Die
+geplante exakte Laufzeit verwendet den offiziellen Berry-C-Interpreter als
+WASM und dieselbe Host-ABI wie das spätere Zephyr-Modul. Details und
+Sicherheitsgrenzen stehen in [`docs/simulator.md`](docs/simulator.md).
 
 ### Generator in einer eigenen Oberfläche
 

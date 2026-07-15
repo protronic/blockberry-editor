@@ -61,9 +61,15 @@
           <div class="code-heading">
             <div>
               <span class="eyebrow mint">Live-Ausgabe</span>
-              <h2>Berry Script</h2>
+              <h2 id="preview-title">Berry Script</h2>
             </div>
-            <button id="copy-code" class="icon-button dark" type="button">Kopieren</button>
+            <div class="preview-actions">
+              <div class="panel-tabs" role="tablist" aria-label="Vorschau wählen">
+                <button id="show-code" class="panel-tab active" type="button" role="tab">Code</button>
+                <button id="show-simulator" class="panel-tab" type="button" role="tab">Simulator</button>
+              </div>
+              <button id="copy-code" class="icon-button dark" type="button">Kopieren</button>
+            </div>
           </div>
 
           <div class="runtime-badge">
@@ -77,6 +83,42 @@
           <div class="code-wrap">
             <pre><code id="berry-code"># Generator wird initialisiert …</code></pre>
           </div>
+
+          <section id="simulator-panel" class="simulator-panel hidden" aria-label="IO-Simulator">
+            <div class="simulator-toolbar">
+              <div class="simulator-engine">
+                <i></i>
+                <span><strong>Berry / Zephyr HAL</strong><small>Browser-Simulationsmodus</small></span>
+              </div>
+              <div class="simulator-buttons">
+                <button id="sim-reset" class="sim-button" type="button">Reset</button>
+                <button id="sim-run" class="sim-button run" type="button">Start</button>
+              </div>
+            </div>
+
+            <div class="simulator-scroll">
+              <div class="sim-cycle">
+                <span id="sim-state-dot"></span>
+                <strong id="sim-state">Bereit</strong>
+                <small><span id="sim-cycles">0</span> Zyklen</small>
+              </div>
+
+              <div class="io-section">
+                <div class="io-heading"><span>Eingänge</span><small>Taster gedrückt halten</small></div>
+                <div id="sim-inputs" class="io-grid"></div>
+              </div>
+
+              <div class="io-section">
+                <div class="io-heading"><span>Ausgänge & Signale</span><small>Live-Zustand</small></div>
+                <div id="sim-outputs" class="io-grid"></div>
+              </div>
+
+              <div class="io-section log-section">
+                <div class="io-heading"><span>Ereignisse</span><small>letzte 80</small></div>
+                <div id="sim-log" class="sim-log"></div>
+              </div>
+            </div>
+          </section>
 
           <div class="code-stats">
             <span><strong id="line-count">0</strong> Zeilen</span>

@@ -6,6 +6,7 @@ import {
   blockBerryToolbox,
   registerBlockBerryBlocks,
 } from '../src/index.ts';
+import {mountSimulator} from './simulator/panel.ts';
 import './styles.css';
 
 const STORAGE_KEY = 'blockberry.project.v1';
@@ -90,6 +91,7 @@ const deployForm = element<HTMLFormElement>('deploy-form');
 const endpointInput = element<HTMLInputElement>('device-endpoint');
 const deployResult = element<HTMLElement>('deploy-result');
 const toast = element<HTMLElement>('toast');
+const simulator = mountSimulator(workspace);
 
 let generatedCode = '';
 let updateTimer = 0;
@@ -107,45 +109,55 @@ const starterXml = `
       </block>
     </statement>
     <statement name="LOOP">
-      <block type="monitor_value">
-        <field name="METRIC">prozesswert</field>
-        <field name="UNIT">%</field>
+      <block type="sps_digital_output">
+        <field name="CHANNEL">LED_STATUS</field>
         <value name="VALUE">
-          <block type="od_read">
-            <field name="INDEX">0x2000</field>
-            <field name="SUBINDEX">0</field>
+          <block type="sps_digital_input">
+            <field name="CHANNEL">DI_ALARM</field>
           </block>
         </value>
         <next>
-          <block type="escalation_rule">
-            <field name="LEVEL">warning</field>
-            <field name="COOLDOWN">60</field>
-            <value name="CONDITION">
-              <block type="sps_digital_input">
-                <field name="CHANNEL">DI_ALARM</field>
+          <block type="monitor_value">
+            <field name="METRIC">prozesswert</field>
+            <field name="UNIT">%</field>
+            <value name="VALUE">
+              <block type="od_read">
+                <field name="INDEX">0x2000</field>
+                <field name="SUBINDEX">0</field>
               </block>
             </value>
-            <value name="MESSAGE">
-              <block type="text">
-                <field name="TEXT">Grenzwert überschritten</field>
-              </block>
-            </value>
-            <statement name="ON_TRIGGER">
-              <block type="signal_set">
-                <field name="SIGNAL">statusleuchte</field>
-                <field name="STATE">warning</field>
-                <next>
-                  <block type="lvgl_set_text">
-                    <field name="WIDGET">status_label</field>
-                    <value name="TEXT">
-                      <block type="text">
-                        <field name="TEXT">WARNUNG</field>
-                      </block>
-                    </value>
+            <next>
+              <block type="escalation_rule">
+                <field name="LEVEL">warning</field>
+                <field name="COOLDOWN">60</field>
+                <value name="CONDITION">
+                  <block type="sps_digital_input">
+                    <field name="CHANNEL">DI_ALARM</field>
                   </block>
-                </next>
+                </value>
+                <value name="MESSAGE">
+                  <block type="text">
+                    <field name="TEXT">Grenzwert überschritten</field>
+                  </block>
+                </value>
+                <statement name="ON_TRIGGER">
+                  <block type="signal_set">
+                    <field name="SIGNAL">statusleuchte</field>
+                    <field name="STATE">warning</field>
+                    <next>
+                      <block type="lvgl_set_text">
+                        <field name="WIDGET">status_label</field>
+                        <value name="TEXT">
+                          <block type="text">
+                            <field name="TEXT">WARNUNG</field>
+                          </block>
+                        </value>
+                      </block>
+                    </next>
+                  </block>
+                </statement>
               </block>
-            </statement>
+            </next>
           </block>
         </next>
       </block>
@@ -183,6 +195,7 @@ function updateOutput(): void {
     byteCount.textContent = String(new TextEncoder().encode(generatedCode).length);
     const count = workspace.getAllBlocks(false).length;
     blockCount.textContent = `${count} ${count === 1 ? 'Block' : 'Blöcke'}`;
+    simulator.sync();
     persistLocally();
   } catch (error) {
     codeElement.textContent = `# Generatorfehler\n# ${error instanceof Error ? error.message : String(error)}`;
@@ -233,7 +246,10 @@ function safeFilename(extension: string): string {
 }
 
 workspace.addChangeListener((event) => {
-  if (!event.isUiEvent) scheduleUpdate();
+  if (!event.isUiEvent) {
+    if (simulator.engine.snapshot().running) simulator.engine.stop();
+    scheduleUpdate();
+  }
 });
 
 projectName.addEventListener('input', scheduleUpdate);

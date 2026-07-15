@@ -277,7 +277,7 @@ const definitions = Blockly.common.createBlockDefinitionsFromJsonArray([
 
 /** Registers BlockBerry's domain blocks in the active Blockly registry. */
 export function registerBlockBerryBlocks(): void {
-  Blockly.common.defineBlocks(definitions);
+  if (!Blockly.Blocks.mini_sps_task) Blockly.common.defineBlocks(definitions);
 }
 
 export {definitions as blockDefinitions};
