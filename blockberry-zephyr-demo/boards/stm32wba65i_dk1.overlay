@@ -3,6 +3,12 @@
  * calibration. Its Kconfig dependency requires the die temperature sensor.
  */
 
+/ {
+	aliases {
+		die-temp0 = &die_temp;
+	};
+};
+
 &die_temp {
 	status = "okay";
 };
