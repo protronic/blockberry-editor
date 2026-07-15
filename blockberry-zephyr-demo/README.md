@@ -28,13 +28,25 @@ direkt aus `modules/lib/berry` in die Zephyr-Anwendung kompiliert.
 ## Host-Demo
 
 ```sh
-west build -d build-native -b native_sim/native/64 \
+ZEPHYR_TOOLCHAIN_VARIANT=host west build -p always \
+  -d build-native -b native_sim/native/64 \
   blockberry-zephyr-demo -- \
   -DEXTRA_CONF_FILE=configs/host.conf
 
 bun blockberry-zephyr-demo/tools/ws-bridge.ts \
   --firmware build-native/zephyr/zephyr.exe
 ```
+
+Alternativ übernimmt der Wrapper die Toolchain-Auswahl:
+
+```sh
+./blockberry-zephyr-demo/tools/build-host.sh
+```
+
+`-p always` ist beim Wechsel der Toolchain wichtig, da ein bereits
+fehlgeschlagener CMake-Cache sonst weiterverwendet werden kann. Für den
+Host-Build wird kein Zephyr SDK benötigt; GCC, Ninja und DTC müssen lokal
+installiert sein.
 
 Die Bridge startet den `native_sim`-Prozess und veröffentlicht dessen
 stdin/stdout unter:
