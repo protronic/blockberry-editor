@@ -38,8 +38,35 @@ Die Webapp bietet:
 - Import und Export von `.blockberry.json`-Projektdateien
 - Export des generierten `.be`-Skripts
 - konfigurierbaren HTTP-PUT-Upload an ein Gerät
+- integrierten Mini-SPS-Simulator mit Tastern, LEDs und Ereignisprotokoll
+- Remote-Berry-REPL über BLE NUS oder eine lokale WebSocket-Bridge
+- Übertragung und Ausführung des aktuell erzeugten Berry-Skripts aus der REPL
 
 Der Produktions-Build liegt nach `bun run build` in `dist/web`.
+
+### Simulator
+
+In der rechten Vorschau öffnet der Tab **Simulator** die virtuelle IO-Front.
+Digitale Eingangsblöcke erscheinen dort als Taster, digitale Ausgänge und
+Signale als LEDs. **Start** führt Initialisierung und SPS-Zyklen mit den im
+Projekt eingestellten Intervallen aus. Änderungen am Blockprogramm halten eine
+laufende Simulation automatisch an.
+
+Der aktuelle Simulator führt den von BlockBerry unterstützten Sprachumfang
+direkt aus. Eine spätere exakte Laufzeit kann den offiziellen Berry-C-
+Interpreter als Browser-WASM verwenden. Details und Sicherheitsgrenzen stehen
+in [`docs/simulator.md`](docs/simulator.md).
+
+### Zephyr-/Berry-Demo
+
+[`blockberry-zephyr-demo`](blockberry-zephyr-demo/README.md) bettet die
+Berry-VM in eine Zephyr-Anwendung ein. Für STM32WB5MMG/STM32WB5MM-DK und
+STM32WBA65I-DK1 stellt sie die REPL über BLE GATT mit den
+Nordic-UART-Service-UUIDs bereit. Der `native_sim`-Build wird über eine kleine
+Bun-Bridge als `ws://localhost:8765/repl` mit der Webapp verbunden.
+Die Schaltfläche **Editor-Skript ausführen** überträgt das aktuelle
+Generatorergebnis als gerahmtes Mehrzeilenskript und startet es in derselben
+Berry-VM.
 
 ### Generator in einer eigenen Oberfläche
 
