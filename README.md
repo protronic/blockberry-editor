@@ -13,11 +13,13 @@ Programme übernommen.
 
 - zyklische, nicht blockierende Mini-SPS-Tasks
 - digitale Ein- und Ausgänge
+- Umgebungssensor (Bereitschaft, Temperatur, Druck, Feuchte)
 - zustandsbehaftete Eskalation mit Stufe und Sperrzeit
 - Signalisierung und Messwerterfassung
 - ThingsBoard-Telemetrie, Geräteattribute und Alarm-Lifecycle
 - lokales Object Dictionary sowie CANopen SDO/NMT
 - eingeschränkte LVGL-Operationen ohne Rohcode oder frei wählbare Methoden
+- Debug-Ausgabe über `log.print`
 - Berry-Generatoren für die benötigten Blockly-Logik-, Mathematik-, Text- und
   Variablenblöcke
 
@@ -70,6 +72,11 @@ sps.wait(duration_ms)
 sps.input(channel)
 sps.output(channel, value)
 
+sensor.ready()
+sensor.temp()
+sensor.pressure()
+sensor.humidity()
+
 escalation.raise_if(rule_id, condition, level, message, cooldown_s)
 signal.set(name, state)
 monitor.record(metric, value, unit)
@@ -89,6 +96,8 @@ canopen.nmt(node, command)
 ui.set_text(widget_id, text)
 ui.set_visible(widget_id, visible)
 ui.set_color(widget_id, color)
+
+log.print(message)
 ```
 
 Diese Namen sind die vorgesehene Grenze zu den nativen C-Modulen. Für Tasmota

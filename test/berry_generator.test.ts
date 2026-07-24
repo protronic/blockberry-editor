@@ -111,4 +111,43 @@ describe('BerryGenerator', () => {
     );
     expect(code).toContain('thingsboard.clear_alarm("Overheat")');
   });
+
+  it('generates sensor reads, readiness check and debug print', () => {
+    const workspace = new Blockly.Workspace();
+    const guard = workspace.newBlock('controls_if');
+    const ready = workspace.newBlock('sensor_ready');
+    guard.getInput('IF0')!.connection!.connect(ready.outputConnection!);
+
+    const log = workspace.newBlock('log_print');
+    const message = workspace.newBlock('text');
+    message.setFieldValue('Sensor OK', 'TEXT');
+    log.getInput('MESSAGE')!.connection!.connect(message.outputConnection!);
+    guard.getInput('DO0')!.connection!.connect(log.previousConnection!);
+
+    const telemetry = workspace.newBlock('thingsboard_telemetry');
+    telemetry.setFieldValue('temperature', 'KEY');
+    const temp = workspace.newBlock('sensor_temp');
+    telemetry.getInput('VALUE')!.connection!.connect(temp.outputConnection!);
+    guard.nextConnection!.connect(telemetry.previousConnection!);
+
+    const pressureTel = workspace.newBlock('thingsboard_telemetry');
+    pressureTel.setFieldValue('pressure', 'KEY');
+    const pressure = workspace.newBlock('sensor_pressure');
+    pressureTel.getInput('VALUE')!.connection!.connect(pressure.outputConnection!);
+    telemetry.nextConnection!.connect(pressureTel.previousConnection!);
+
+    const humidityTel = workspace.newBlock('thingsboard_telemetry');
+    humidityTel.setFieldValue('humidity', 'KEY');
+    const humidity = workspace.newBlock('sensor_humidity');
+    humidityTel.getInput('VALUE')!.connection!.connect(humidity.outputConnection!);
+    pressureTel.nextConnection!.connect(humidityTel.previousConnection!);
+
+    const code = new BerryGenerator().workspaceToCode(workspace);
+
+    expect(code).toContain('if sensor.ready()');
+    expect(code).toContain('log.print("Sensor OK")');
+    expect(code).toContain('thingsboard.telemetry("temperature", sensor.temp())');
+    expect(code).toContain('thingsboard.telemetry("pressure", sensor.pressure())');
+    expect(code).toContain('thingsboard.telemetry("humidity", sensor.humidity())');
+  });
 });

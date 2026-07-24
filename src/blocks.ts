@@ -43,6 +43,34 @@ const definitions = Blockly.common.createBlockDefinitionsFromJsonArray([
     colour: 210,
   },
   {
+    type: 'sensor_ready',
+    message0: 'Sensor bereit',
+    output: 'Boolean',
+    colour: 120,
+    tooltip: 'Prüft, ob der Umgebungssensor (z. B. BMx280) bereit ist.',
+  },
+  {
+    type: 'sensor_temp',
+    message0: 'Sensor Temperatur',
+    output: 'Number',
+    colour: 120,
+    tooltip: 'Liest die Temperatur vom Umgebungssensor.',
+  },
+  {
+    type: 'sensor_pressure',
+    message0: 'Sensor Druck',
+    output: 'Number',
+    colour: 120,
+    tooltip: 'Liest den Luftdruck vom Umgebungssensor.',
+  },
+  {
+    type: 'sensor_humidity',
+    message0: 'Sensor Feuchte',
+    output: 'Number',
+    colour: 120,
+    tooltip: 'Liest die relative Feuchte vom Umgebungssensor.',
+  },
+  {
     type: 'escalation_rule',
     message0: 'Wenn %1 eskalieren als %2',
     args0: [
@@ -272,6 +300,15 @@ const definitions = Blockly.common.createBlockDefinitionsFromJsonArray([
     previousStatement: null,
     nextStatement: null,
     colour: 330,
+  },
+  {
+    type: 'log_print',
+    message0: 'Protokoll %1',
+    args0: [{type: 'input_value', name: 'MESSAGE'}],
+    previousStatement: null,
+    nextStatement: null,
+    colour: 65,
+    tooltip: 'Schreibt eine Debug-Meldung über die Log-Binding-Schicht.',
   },
 ]);
 

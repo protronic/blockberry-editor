@@ -17,6 +17,17 @@ export const blockBerryToolbox: Blockly.utils.toolbox.ToolboxDefinition = {
     },
     {
       kind: 'category',
+      name: 'Sensoren',
+      colour: '120',
+      contents: [
+        {kind: 'block', type: 'sensor_ready'},
+        {kind: 'block', type: 'sensor_temp'},
+        {kind: 'block', type: 'sensor_pressure'},
+        {kind: 'block', type: 'sensor_humidity'},
+      ],
+    },
+    {
+      kind: 'category',
       name: 'Eskalation',
       colour: '15',
       contents: [{kind: 'block', type: 'escalation_rule'}],
@@ -63,6 +74,12 @@ export const blockBerryToolbox: Blockly.utils.toolbox.ToolboxDefinition = {
         {kind: 'block', type: 'lvgl_set_visible'},
         {kind: 'block', type: 'lvgl_set_color'},
       ],
+    },
+    {
+      kind: 'category',
+      name: 'Debug',
+      colour: '65',
+      contents: [{kind: 'block', type: 'log_print'}],
     },
     {
       kind: 'category',

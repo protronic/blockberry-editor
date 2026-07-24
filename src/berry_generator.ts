@@ -232,6 +232,10 @@ export class BerryGenerator extends LuaGenerator {
     ];
     this.forBlock.sps_digital_output = (block) =>
       `sps.output(${this.quote_(block.getFieldValue('CHANNEL') ?? '')}, ${value(this, block, 'VALUE', 'false')})\n`;
+    this.forBlock.sensor_ready = () => ['sensor.ready()', BerryOrder.MEMBER];
+    this.forBlock.sensor_temp = () => ['sensor.temp()', BerryOrder.MEMBER];
+    this.forBlock.sensor_pressure = () => ['sensor.pressure()', BerryOrder.MEMBER];
+    this.forBlock.sensor_humidity = () => ['sensor.humidity()', BerryOrder.MEMBER];
     this.forBlock.escalation_rule = (block) => {
       const id = this.quote_(block.id);
       const condition = value(this, block, 'CONDITION', 'false');
@@ -276,6 +280,8 @@ export class BerryGenerator extends LuaGenerator {
       `ui.set_visible(${this.quote_(block.getFieldValue('WIDGET') ?? '')}, ${value(this, block, 'VISIBLE', 'false')})\n`;
     this.forBlock.lvgl_set_color = (block) =>
       `ui.set_color(${this.quote_(block.getFieldValue('WIDGET') ?? '')}, ${this.quote_(block.getFieldValue('COLOR') ?? 'gray')})\n`;
+    this.forBlock.log_print = (block) =>
+      `log.print(${value(this, block, 'MESSAGE', '""')})\n`;
   }
 }
 
