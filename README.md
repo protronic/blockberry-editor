@@ -25,23 +25,30 @@ Programme übernommen.
 
 ## Einbindung
 
-### Webapp starten
+### OpenCloud-Webapp
+
+Die Oberfläche ist als native OpenCloud-Dateiapp auf Basis des
+[`web-app-skeleton`](https://github.com/opencloud-eu/web-app-skeleton) aufgebaut.
+Sie registriert sich für JSON-Dateien und lädt bzw. speichert das
+`blockberry`-Projektformat über den OpenCloud `AppWrapperRoute`.
+
+Die App bietet:
+
+- Öffnen und Speichern von `.blockberry.json`-Projektdateien in OpenCloud
+- OpenCloud-Autosave, Speichern unter, Konfliktprüfung und Schreibschutz
+- Blockly-Arbeitsfläche mit einem Mini-SPS-Beispielprojekt
+- Textvorschau des erzeugten `.be`-Berry-Skripts
+- Download des generierten `.be`-Skripts
 
 ```sh
-bun install
-bun run dev
+pnpm install
+pnpm run dev
 ```
 
-Die Webapp bietet:
-
-- Blockly-Arbeitsfläche mit einem Mini-SPS-Beispielprojekt
-- Live-Vorschau des erzeugten Berry-Skripts
-- automatische lokale Sicherung im Browser
-- Import und Export von `.blockberry.json`-Projektdateien
-- Export des generierten `.be`-Skripts
-- konfigurierbaren HTTP-PUT-Upload an ein Gerät
-
-Der Produktions-Build liegt nach `bun run build` in `dist/web`.
+`pnpm run dev` erzeugt einen Development-Build im Watch-Modus. Dieser wird wie
+im OpenCloud-Webapp-Skeleton beschrieben in einer lokalen OpenCloud-Instanz
+registriert. Der Produktions-Build liegt nach `pnpm run build` in `dist/web`;
+die wiederverwendbare Generatorbibliothek liegt in `dist/lib`.
 
 ### Generator in einer eigenen Oberfläche
 
@@ -113,6 +120,6 @@ Sperrzeit erneut zulässigen Eskalation liefern. Dadurch läuft der untergeordne
 ## Entwicklung
 
 ```sh
-bun install
-bun run check
+pnpm install
+pnpm run check
 ```
