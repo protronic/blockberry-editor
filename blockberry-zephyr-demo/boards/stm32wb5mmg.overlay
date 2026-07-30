@@ -1,0 +1,14 @@
+/*
+ * The STM32WB HCI integration installs a software radio ISR on vector 45.
+ * The module DTS otherwise has no enabled peripheral at that IRQ, so reserve
+ * it explicitly for Zephyr's automatic NUM_IRQS calculation.
+ */
+
+/ {
+	radio_irq_reservation {
+		compatible = "zephyr,irq-reservation";
+		interrupt-parent = <&nvic>;
+		interrupts = <45 0>;
+		status = "okay";
+	};
+};

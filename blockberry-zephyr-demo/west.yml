@@ -1,0 +1,21 @@
+manifest:
+  version: "1.2"
+
+  remotes:
+    - name: zephyrproject
+      url-base: https://github.com/zephyrproject-rtos
+    - name: berry-lang
+      url-base: https://github.com/berry-lang
+
+  projects:
+    - name: zephyr
+      remote: zephyrproject
+      revision: v4.4.1
+      import: true
+    - name: berry
+      remote: berry-lang
+      revision: b5ede66721937533fbf5c286ef44a5111ea30c75
+      path: modules/lib/berry
+
+  self:
+    path: blockberry-zephyr-demo

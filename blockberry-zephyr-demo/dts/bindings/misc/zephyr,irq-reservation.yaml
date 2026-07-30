@@ -1,0 +1,9 @@
+description: Interrupt reservation used by a vendor radio library
+
+compatible: "zephyr,irq-reservation"
+
+include: base.yaml
+
+properties:
+  interrupts:
+    required: true
