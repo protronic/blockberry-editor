@@ -4,6 +4,10 @@ export default defineConfig({
   name: 'blockberry-editor',
   build: {
     outDir: 'dist/web',
-    emptyOutDir: false,
+    emptyOutDir: true,
+  },
+  test: {
+    environment: 'node',
+    include: ['test/**/*.test.ts'],
   },
 });

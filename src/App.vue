@@ -275,7 +275,7 @@ watch(
 );
 
 onMounted(async () => {
-  Blockly.setLocale(De);
+  Blockly.setLocale(De as unknown as Record<string, string>);
   registerBlockBerryBlocks();
   await nextTick();
   workspace.value = Blockly.inject(editorElement.value!, {
