@@ -6,18 +6,23 @@ import {
   blockBerryToolbox,
   registerBlockBerryBlocks,
 } from '../src/index.ts';
+import {
+  currentUsername,
+  initAuth,
+  isAuthenticated,
+  login,
+  logout,
+} from './auth.ts';
+import {
+  listCloudProjects,
+  loadCloudProject,
+  saveCloudProject,
+  type ProjectFile,
+} from './couch.ts';
 import './styles.css';
 
 const STORAGE_KEY = 'blockberry.project.v1';
 const ENDPOINT_KEY = 'blockberry.deviceEndpoint';
-
-type ProjectFile = {
-  format: 'blockberry';
-  version: 1;
-  name: string;
-  savedAt: string;
-  workspace: object;
-};
 
 function element<T extends HTMLElement>(id: string): T {
   const found = document.getElementById(id);
@@ -89,11 +94,18 @@ const deployDialog = element<HTMLDialogElement>('deploy-dialog');
 const deployForm = element<HTMLFormElement>('deploy-form');
 const endpointInput = element<HTMLInputElement>('device-endpoint');
 const deployResult = element<HTMLElement>('deploy-result');
+const cloudDialog = element<HTMLDialogElement>('cloud-dialog');
+const cloudResult = element<HTMLElement>('cloud-result');
+const cloudList = element<HTMLElement>('cloud-project-list');
+const authStatus = element<HTMLElement>('auth-status');
+const authButton = element<HTMLButtonElement>('auth-button');
 const toast = element<HTMLElement>('toast');
 
 let generatedCode = '';
 let updateTimer = 0;
 let toastTimer = 0;
+let cloudDocId: string | undefined;
+let cloudDocRev: string | undefined;
 
 const starterXml = `
 <xml xmlns="https://developers.google.com/blockly/xml">
@@ -174,6 +186,19 @@ function persistLocally(): void {
   localStorage.setItem(STORAGE_KEY, JSON.stringify(projectState()));
 }
 
+function updateAuthUi(): void {
+  const loggedIn = isAuthenticated();
+  authStatus.textContent = loggedIn ? currentUsername() : 'Gast';
+  authButton.textContent = loggedIn ? 'Abmelden' : 'Anmelden';
+}
+
+async function ensureLoggedIn(): Promise<boolean> {
+  if (isAuthenticated()) return true;
+  showToast('Anmeldung erforderlich');
+  await login();
+  return false;
+}
+
 function updateOutput(): void {
   try {
     generatedCode = berryGenerator.workspaceToCode(workspace);
@@ -206,6 +231,8 @@ function loadProject(project: Partial<ProjectFile>): void {
 }
 
 function loadStarter(): void {
+  cloudDocId = undefined;
+  cloudDocRev = undefined;
   workspace.clear();
   const xml = Blockly.utils.xml.textToDom(starterXml);
   Blockly.Xml.domToWorkspace(xml, workspace);
@@ -230,6 +257,60 @@ function safeFilename(extension: string): string {
     .replace(/[^a-z0-9äöüß_-]+/gi, '-')
     .replace(/^-+|-+$/g, '');
   return `${base || 'blockberry'}${extension}`;
+}
+
+function formatSavedAt(iso: string): string {
+  const date = new Date(iso);
+  if (Number.isNaN(date.getTime())) return iso || '—';
+  return date.toLocaleString('de-DE');
+}
+
+async function refreshCloudList(): Promise<void> {
+  cloudResult.classList.remove('error');
+  cloudResult.textContent = 'Lade Projekte …';
+  cloudList.replaceChildren();
+  try {
+    const projects = await listCloudProjects();
+    if (!projects.length) {
+      cloudResult.textContent = 'Noch keine Projekte in der Cloud.';
+      return;
+    }
+    cloudResult.textContent = `${projects.length} Projekt${projects.length === 1 ? '' : 'e'}`;
+    for (const project of projects) {
+      const item = document.createElement('li');
+      const button = document.createElement('button');
+      button.type = 'button';
+      button.innerHTML = `<strong>${escapeHtml(project.name)}</strong><small>${escapeHtml(project._id)} · ${escapeHtml(formatSavedAt(project.savedAt))}</small>`;
+      button.addEventListener('click', async () => {
+        try {
+          const doc = await loadCloudProject(project._id);
+          loadProject(doc);
+          cloudDocId = doc._id;
+          cloudDocRev = doc._rev;
+          cloudDialog.close();
+          showToast('Cloud-Projekt geladen');
+        } catch (error) {
+          cloudResult.classList.add('error');
+          cloudResult.textContent =
+            error instanceof Error ? error.message : 'Laden fehlgeschlagen';
+        }
+      });
+      item.append(button);
+      cloudList.append(item);
+    }
+  } catch (error) {
+    cloudResult.classList.add('error');
+    cloudResult.textContent =
+      error instanceof Error ? error.message : 'Cloud-Liste fehlgeschlagen';
+  }
+}
+
+function escapeHtml(value: string): string {
+  return value
+    .replaceAll('&', '&amp;')
+    .replaceAll('<', '&lt;')
+    .replaceAll('>', '&gt;')
+    .replaceAll('"', '&quot;');
 }
 
 workspace.addChangeListener((event) => {
@@ -258,6 +339,8 @@ fileInput.addEventListener('change', async () => {
   if (!file) return;
   try {
     loadProject(JSON.parse(await file.text()) as ProjectFile);
+    cloudDocId = undefined;
+    cloudDocRev = undefined;
     showToast('Projekt geladen');
   } catch (error) {
     showToast(error instanceof Error ? error.message : 'Projekt konnte nicht geladen werden');
@@ -278,6 +361,39 @@ element('copy-code').addEventListener('click', async () => {
 });
 
 element('center-workspace').addEventListener('click', () => workspace.zoomToFit());
+
+authButton.addEventListener('click', async () => {
+  if (isAuthenticated()) await logout();
+  else await login();
+});
+
+element('save-cloud').addEventListener('click', async () => {
+  if (!(await ensureLoggedIn())) return;
+  try {
+    const saved = await saveCloudProject(projectState(), {
+      id: cloudDocId,
+      rev: cloudDocRev,
+      owner: currentUsername(),
+    });
+    cloudDocId = saved._id;
+    cloudDocRev = saved._rev;
+    showToast('In Cloud gespeichert');
+  } catch (error) {
+    showToast(error instanceof Error ? error.message : 'Cloud-Speichern fehlgeschlagen');
+  }
+});
+
+element('open-cloud').addEventListener('click', async () => {
+  if (!(await ensureLoggedIn())) return;
+  cloudDialog.showModal();
+  await refreshCloudList();
+});
+
+element('close-cloud').addEventListener('click', () => cloudDialog.close());
+element('cancel-cloud').addEventListener('click', () => cloudDialog.close());
+element('refresh-cloud').addEventListener('click', () => {
+  void refreshCloudList();
+});
 
 function closeDeployDialog(): void {
   deployDialog.close();
@@ -329,3 +445,7 @@ if (saved) {
 } else {
   loadStarter();
 }
+
+void initAuth().then(() => {
+  updateAuthUi();
+});

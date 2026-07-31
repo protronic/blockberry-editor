@@ -38,10 +38,38 @@ Die Webapp bietet:
 - Live-Vorschau des erzeugten Berry-Skripts
 - automatische lokale Sicherung im Browser
 - Import und Export von `.blockberry.json`-Projektdateien
+- Cloud-Speicherung in CouchDB (Keycloak-Login, JWT)
 - Export des generierten `.be`-Skripts
 - konfigurierbaren HTTP-PUT-Upload an ein Gerät
 
 Der Produktions-Build liegt nach `bun run build` in `dist/web`.
+
+### Cloud (Keycloak + CouchDB)
+
+Die Webapp meldet sich per OpenID Connect (PKCE) an Keycloak an und speichert
+Projekte als Dokumente in CouchDB (`Authorization: Bearer …`).
+
+Defaults (überschreibbar per `.env`, siehe `.env.example`):
+
+| Variable | Default |
+|----------|---------|
+| `VITE_KEYCLOAK_URL` | `https://keycloak.protronic-gmbh.de` |
+| `VITE_KEYCLOAK_REALM` | `openCloud` |
+| `VITE_KEYCLOAK_CLIENT_ID` | `blockberry-editor-client` |
+| `VITE_COUCH_URL` | `https://couch.protronic-gmbh.de/couchdb` |
+| `VITE_COUCH_DB` | `blockberry-projects` |
+
+Am Keycloak-Client müssen **Valid redirect URIs** und **Web origins** die
+Editor-URL enthalten:
+
+- Valid redirect URIs: `http://localhost:5173/*` (plus Prod-URL)
+- Web origins: `http://localhost:5173` oder `+` (übernimmt Origins aus den Redirect-URIs)
+
+Ohne **Web origins** liefert der Token-Endpoint oft **403 ohne CORS-Header** —
+der Browser meldet das als CORS-Fehler. Client sollte **public** sein
+(Client authentication aus), Standard flow an, PKCE S256.
+
+CouchDB braucht CORS für dieselbe Origin sowie JWT-Auth mit Claim `_couchdb.roles`.
 
 ### Generator in einer eigenen Oberfläche
 

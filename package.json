@@ -23,6 +23,7 @@
     "preview": "vite preview",
     "test": "bun test",
     "check": "bun run build && bun run test",
+    "check:jwt": "bun scripts/check-keycloak-jwt.ts",
     "deploy": "bun run test && bun deploy.ts"
   },
   "repository": {
@@ -44,7 +45,8 @@
   },
   "homepage": "https://github.com/protronic/blockberry-editor#readme",
   "dependencies": {
-    "blockly": "^13.1.1"
+    "blockly": "^13.1.1",
+    "keycloak-js": "^26.2.4"
   },
   "devDependencies": {
     "typescript": "^7.0.2",

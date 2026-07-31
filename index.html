@@ -27,8 +27,14 @@
 
         <nav class="top-actions" aria-label="Projektaktionen">
           <button id="new-project" class="button ghost" type="button">Neu</button>
-          <button id="load-project" class="button ghost" type="button">Öffnen</button>
-          <button id="save-project" class="button ghost" type="button">Speichern</button>
+          <button id="load-project" class="button ghost" type="button" title="Lokale Datei">
+            Öffnen
+          </button>
+          <button id="save-project" class="button ghost" type="button" title="Lokale Datei">
+            Speichern
+          </button>
+          <button id="open-cloud" class="button ghost" type="button">Cloud öffnen</button>
+          <button id="save-cloud" class="button ghost" type="button">In Cloud</button>
           <span class="action-divider"></span>
           <button id="export-script" class="button secondary" type="button">
             Berry exportieren
@@ -37,6 +43,9 @@
             <span class="button-dot"></span>
             Auf Gerät
           </button>
+          <span class="action-divider"></span>
+          <span id="auth-status" class="auth-status">…</span>
+          <button id="auth-button" class="button ghost" type="button">Anmelden</button>
         </nav>
       </header>
 
@@ -122,6 +131,25 @@
           <button class="button primary" type="submit">Skript übertragen</button>
         </div>
       </form>
+    </dialog>
+
+    <dialog id="cloud-dialog">
+      <div class="dialog-body">
+        <div class="dialog-heading">
+          <div>
+            <span class="eyebrow">CouchDB</span>
+            <h2>Projekt aus Cloud öffnen</h2>
+          </div>
+          <button id="close-cloud" class="dialog-close" type="button" aria-label="Schließen">×</button>
+        </div>
+        <p>Gespeicherte BlockBerry-Projekte aus der CouchDB-Datenbank.</p>
+        <div id="cloud-result" class="deploy-result" role="status"></div>
+        <ul id="cloud-project-list" class="cloud-project-list"></ul>
+        <div class="dialog-actions">
+          <button id="refresh-cloud" class="button ghost dark-text" type="button">Aktualisieren</button>
+          <button id="cancel-cloud" class="button ghost dark-text" type="button">Schließen</button>
+        </div>
+      </div>
     </dialog>
 
     <div id="toast" class="toast" role="status" aria-live="polite"></div>
