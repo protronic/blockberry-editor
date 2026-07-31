@@ -270,7 +270,14 @@ async function copyCode(): Promise<void> {
 watch(
   () => props.currentContent,
   (content) => {
-    if (workspace.value && content !== lastContent) loadContent(content);
+    if (!workspace.value || content === lastContent) return;
+    try {
+      loadContent(content);
+    } catch (error) {
+      generatedCode.value = `# Projekt konnte nicht geladen werden\n# ${
+        error instanceof Error ? error.message : String(error)
+      }`;
+    }
   },
 );
 
