@@ -134,6 +134,8 @@ let updateTimer = 0;
 let toastTimer = 0;
 let resizeObserver: ResizeObserver | undefined;
 let lastContent = '';
+let suppressAutosave = false;
+let hasAppliedContent = false;
 
 const lineCount = computed(() => {
   const code = generatedCode.value.trimEnd();
@@ -146,6 +148,12 @@ const starterXml = `
   <block type="mini_sps_task" x="48" y="48">
     <field name="NAME">anlagenstatus</field>
     <field name="INTERVAL">500</field>
+    <statement name="INIT">
+      <block type="signal_set">
+        <field name="SIGNAL">statusleuchte</field>
+        <field name="STATE">normal</field>
+      </block>
+    </statement>
     <statement name="LOOP">
       <block type="monitor_value">
         <field name="METRIC">prozesswert</field>
@@ -156,10 +164,47 @@ const starterXml = `
             <field name="SUBINDEX">0</field>
           </block>
         </value>
+        <next>
+          <block type="escalation_rule">
+            <field name="LEVEL">warning</field>
+            <field name="COOLDOWN">60</field>
+            <value name="CONDITION">
+              <block type="sps_digital_input">
+                <field name="CHANNEL">DI_ALARM</field>
+              </block>
+            </value>
+            <value name="MESSAGE">
+              <block type="text">
+                <field name="TEXT">Grenzwert überschritten</field>
+              </block>
+            </value>
+            <statement name="ON_TRIGGER">
+              <block type="signal_set">
+                <field name="SIGNAL">statusleuchte</field>
+                <field name="STATE">warning</field>
+                <next>
+                  <block type="lvgl_set_text">
+                    <field name="WIDGET">status_label</field>
+                    <value name="TEXT">
+                      <block type="text">
+                        <field name="TEXT">WARNUNG</field>
+                      </block>
+                    </value>
+                  </block>
+                </next>
+              </block>
+            </statement>
+          </block>
+        </next>
       </block>
     </statement>
   </block>
 </xml>`;
+
+function resourceExpectsFileContent(resource: Resource | undefined): boolean {
+  const size = Number(resource?.size ?? 0);
+  return Number.isFinite(size) && size > 0;
+}
 
 function projectState(): ProjectFile {
   return {
@@ -179,16 +224,11 @@ function parseProject(content: string): ProjectFile {
   return project as ProjectFile;
 }
 
-function updateOutput(): void {
+function refreshPreview(): void {
   if (!workspace.value) return;
   try {
     generatedCode.value = berryGenerator.workspaceToCode(workspace.value);
     blockCount.value = workspace.value.getAllBlocks(false).length;
-    const serialized = JSON.stringify(projectState(), null, 2);
-    if (!props.isReadOnly && serialized !== lastContent) {
-      lastContent = serialized;
-      emit('update:currentContent', serialized);
-    }
   } catch (error) {
     generatedCode.value = `# Generatorfehler\n# ${
       error instanceof Error ? error.message : String(error)
@@ -196,45 +236,96 @@ function updateOutput(): void {
   }
 }
 
-function scheduleUpdate(): void {
-  window.clearTimeout(updateTimer);
-  updateTimer = window.setTimeout(updateOutput, 90);
+function commitWorkspaceToOpenCloud(): void {
+  if (!workspace.value || props.isReadOnly || suppressAutosave) return;
+  refreshPreview();
+  const serialized = JSON.stringify(projectState(), null, 2);
+  if (serialized === lastContent) return;
+  lastContent = serialized;
+  emit('update:currentContent', serialized);
 }
 
-function loadStarter(): void {
+function scheduleUpdate(): void {
+  if (suppressAutosave) return;
+  window.clearTimeout(updateTimer);
+  updateTimer = window.setTimeout(commitWorkspaceToOpenCloud, 90);
+}
+
+function fitWorkspace(): void {
   if (!workspace.value) return;
-  workspace.value.clear();
-  Blockly.Xml.domToWorkspace(Blockly.utils.xml.textToDom(starterXml), workspace.value);
-  window.setTimeout(() => workspace.value?.zoomToFit(), 30);
-  updateOutput();
+  Blockly.svgResize(workspace.value);
+  workspace.value.zoomToFit();
+}
+
+function withSuppressedAutosave(action: () => void): void {
+  suppressAutosave = true;
+  window.clearTimeout(updateTimer);
+  try {
+    action();
+  } finally {
+    // Blockly may emit change events asynchronously while loading.
+    window.setTimeout(() => {
+      suppressAutosave = false;
+    }, 0);
+  }
+}
+
+function loadStarter(options: {persist?: boolean} = {}): void {
+  if (!workspace.value) return;
+  withSuppressedAutosave(() => {
+    workspace.value!.clear();
+    Blockly.Xml.domToWorkspace(Blockly.utils.xml.textToDom(starterXml), workspace.value!);
+    refreshPreview();
+    window.setTimeout(fitWorkspace, 30);
+  });
+  hasAppliedContent = true;
+  if (options.persist !== false && !props.isReadOnly) {
+    commitWorkspaceToOpenCloud();
+  }
+}
+
+function loadProject(content: string): void {
+  if (!workspace.value) return;
+
+  withSuppressedAutosave(() => {
+    const project = parseProject(content);
+    workspace.value!.clear();
+    Blockly.serialization.workspaces.load(project.workspace, workspace.value!);
+    projectName.value = project.name || 'Unbenanntes Projekt';
+    lastContent = content;
+    refreshPreview();
+    window.setTimeout(fitWorkspace, 30);
+  });
+  hasAppliedContent = true;
 }
 
 function loadContent(content: string): void {
   if (!workspace.value) return;
+
   if (!content.trim()) {
-    projectName.value = props.resource?.name?.replace(/\.blockberry\.json$|\.json$/i, '') ||
-      'Neue Steuerung';
-    loadStarter();
+    if (!hasAppliedContent && resourceExpectsFileContent(props.resource)) {
+      // AppWrapper still loads the file; keep the canvas empty until content arrives.
+      generatedCode.value = '# Datei wird geladen …';
+      return;
+    }
+
+    projectName.value =
+      props.resource?.name?.replace(/\.blockberry\.json$|\.json$/i, '') || 'Neue Steuerung';
+    loadStarter({persist: true});
     return;
   }
 
-  const project = parseProject(content);
-  workspace.value.clear();
-  Blockly.serialization.workspaces.load(project.workspace, workspace.value);
-  projectName.value = project.name || 'Unbenanntes Projekt';
-  lastContent = content;
-  updateOutput();
-  window.setTimeout(() => workspace.value?.zoomToFit(), 30);
+  loadProject(content);
 }
 
 function resetProject(): void {
   if (props.isReadOnly || !window.confirm('Aktuelles Projekt zurücksetzen?')) return;
   projectName.value = 'Neue Steuerung';
-  loadStarter();
+  loadStarter({persist: true});
 }
 
 function centerWorkspace(): void {
-  workspace.value?.zoomToFit();
+  fitWorkspace();
 }
 
 function safeScriptName(): string {
@@ -247,7 +338,7 @@ function safeScriptName(): string {
 }
 
 function exportScript(): void {
-  updateOutput();
+  refreshPreview();
   const url = URL.createObjectURL(
     new Blob([generatedCode.value], {type: 'text/plain;charset=utf-8'}),
   );
@@ -285,13 +376,40 @@ onMounted(async () => {
   Blockly.setLocale(De as unknown as Record<string, string>);
   registerBlockBerryBlocks();
   await nextTick();
+
+  const blockBerryTheme = Blockly.Theme.defineTheme('blockberry', {
+    base: Blockly.Themes.Classic,
+    componentStyles: {
+      workspaceBackgroundColour: '#f7f8f6',
+      toolboxBackgroundColour: '#eef1ef',
+      flyoutBackgroundColour: '#fafbfa',
+      flyoutForegroundColour: '#45544d',
+      flyoutOpacity: 1,
+      scrollbarColour: '#aebbb5',
+      scrollbarOpacity: 0.55,
+      insertionMarkerColour: '#d63b65',
+      insertionMarkerOpacity: 0.4,
+      cursorColour: '#d63b65',
+    },
+    fontStyle: {
+      family: 'Manrope, sans-serif',
+      weight: '600',
+      size: 10,
+    },
+  });
+
   workspace.value = Blockly.inject(editorElement.value!, {
     toolbox: props.isReadOnly ? undefined : blockBerryToolbox,
+    theme: blockBerryTheme,
     readOnly: props.isReadOnly,
     renderer: 'zelos',
     trashcan: !props.isReadOnly,
     sounds: false,
-    move: {scrollbars: true, drag: true, wheel: true},
+    move: {
+      scrollbars: {horizontal: true, vertical: true},
+      drag: true,
+      wheel: true,
+    },
     zoom: {
       controls: true,
       wheel: true,
@@ -305,7 +423,10 @@ onMounted(async () => {
   workspace.value.addChangeListener((event) => {
     if (!event.isUiEvent) scheduleUpdate();
   });
-  resizeObserver = new ResizeObserver(() => Blockly.svgResize(workspace.value!));
+  resizeObserver = new ResizeObserver(() => {
+    if (!workspace.value) return;
+    Blockly.svgResize(workspace.value);
+  });
   resizeObserver.observe(editorElement.value!);
 
   try {
