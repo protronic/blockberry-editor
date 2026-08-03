@@ -48,7 +48,6 @@ export default defineWebApplication({
           label: () => $gettext('Edit with BlockBerry'),
           newFileMenu: {
             menuTitle: () => $gettext('BlockBerry project'),
-            defaultName: () => $gettext('New control.blockberry.json'),
           },
         },
       ],

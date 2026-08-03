@@ -96,7 +96,7 @@ import * as Blockly from 'blockly/core';
 import 'blockly/blocks';
 import * as De from 'blockly/msg/de';
 import type {Resource} from '@opencloud-eu/web-client';
-import {computed, nextTick, onBeforeUnmount, onMounted, ref, watch} from 'vue';
+import {computed, nextTick, onBeforeUnmount, onMounted, ref, shallowRef, watch} from 'vue';
 import {
   berryGenerator,
   blockBerryToolbox,
@@ -129,13 +129,17 @@ const toastElement = ref<HTMLElement>();
 const projectName = ref('Neue Steuerung');
 const generatedCode = ref('# Generator wird initialisiert …');
 const blockCount = ref(0);
-const workspace = ref<Blockly.WorkspaceSvg>();
+// Blockly relies on identity comparisons in its internal data structures
+// (e.g. the connection database). A deep `ref` would wrap the workspace in a
+// reactive proxy and corrupt those lookups, so loads abort halfway through.
+const workspace = shallowRef<Blockly.WorkspaceSvg>();
 let updateTimer = 0;
 let toastTimer = 0;
 let resizeObserver: ResizeObserver | undefined;
 let lastContent = '';
 let suppressAutosave = false;
 let hasAppliedContent = false;
+let contentLoadFailed = false;
 
 const lineCount = computed(() => {
   const code = generatedCode.value.trimEnd();
@@ -236,10 +240,26 @@ function refreshPreview(): void {
   }
 }
 
+function projectSignature(project: Partial<ProjectFile>): string {
+  return JSON.stringify({name: project.name, workspace: project.workspace});
+}
+
 function commitWorkspaceToOpenCloud(): void {
-  if (!workspace.value || props.isReadOnly || suppressAutosave) return;
+  // contentLoadFailed guards against overwriting the stored file with a
+  // partially applied workspace after a failed load.
+  if (!workspace.value || props.isReadOnly || suppressAutosave || contentLoadFailed) return;
   refreshPreview();
-  const serialized = JSON.stringify(projectState(), null, 2);
+  const state = projectState();
+  if (lastContent) {
+    try {
+      if (projectSignature(JSON.parse(lastContent) as Partial<ProjectFile>) === projectSignature(state)) {
+        return;
+      }
+    } catch {
+      // Previous content is not comparable; fall through and emit.
+    }
+  }
+  const serialized = JSON.stringify(state, null, 2);
   if (serialized === lastContent) return;
   lastContent = serialized;
   emit('update:currentContent', serialized);
@@ -279,6 +299,7 @@ function loadStarter(options: {persist?: boolean} = {}): void {
     window.setTimeout(fitWorkspace, 30);
   });
   hasAppliedContent = true;
+  contentLoadFailed = false;
   if (options.persist !== false && !props.isReadOnly) {
     commitWorkspaceToOpenCloud();
   }
@@ -297,6 +318,7 @@ function loadProject(content: string): void {
     window.setTimeout(fitWorkspace, 30);
   });
   hasAppliedContent = true;
+  contentLoadFailed = false;
 }
 
 function loadContent(content: string): void {
@@ -365,6 +387,7 @@ watch(
     try {
       loadContent(content);
     } catch (error) {
+      contentLoadFailed = true;
       generatedCode.value = `# Projekt konnte nicht geladen werden\n# ${
         error instanceof Error ? error.message : String(error)
       }`;
@@ -378,6 +401,7 @@ onMounted(async () => {
   await nextTick();
 
   const blockBerryTheme = Blockly.Theme.defineTheme('blockberry', {
+    name: 'blockberry',
     base: Blockly.Themes.Classic,
     componentStyles: {
       workspaceBackgroundColour: '#f7f8f6',
@@ -432,6 +456,7 @@ onMounted(async () => {
   try {
     loadContent(props.currentContent || '');
   } catch (error) {
+    contentLoadFailed = true;
     generatedCode.value = `# Projekt konnte nicht geladen werden\n# ${
       error instanceof Error ? error.message : String(error)
     }`;
