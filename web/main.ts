@@ -14,12 +14,14 @@ import {
 } from '../src/library.ts';
 import {
   currentUsername,
+  getAccessToken,
   initAuth,
   isAuthenticated,
   login,
   logout,
 } from './auth.ts';
 import {
+  configureCouchAuth,
   listCloudProfiles,
   listCloudProjects,
   loadCloudProject,
@@ -27,6 +29,8 @@ import {
   type ProjectFile,
 } from './couch.ts';
 import './styles.css';
+
+configureCouchAuth(getAccessToken);
 
 const STORAGE_KEY = 'blockberry.project.v1';
 const ENDPOINT_KEY = 'blockberry.deviceEndpoint';

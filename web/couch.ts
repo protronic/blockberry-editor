@@ -1,5 +1,4 @@
 import {appConfig, couchDbUrl} from './config.ts';
-import {getAccessToken} from './auth.ts';
 import type {DeviceProfile} from '../src/device_profiles.ts';
 
 export type ProjectFile = {
@@ -35,12 +34,25 @@ type AllDocsResponse<T> = {
   }>;
 };
 
+/** Supplies the Bearer token for CouchDB (Keycloak or OpenCloud host token). */
+export type CouchAccessTokenProvider = () => Promise<string>;
+
+let accessTokenProvider: CouchAccessTokenProvider | null = null;
+
+/** Registers how CouchDB requests obtain an access token. Call once at app start. */
+export function configureCouchAuth(provider: CouchAccessTokenProvider): void {
+  accessTokenProvider = provider;
+}
+
 async function couchFetch(
   path: string,
   init: RequestInit = {},
   db = appConfig.couchDb,
 ): Promise<Response> {
-  const token = await getAccessToken();
+  if (!accessTokenProvider) {
+    throw new Error('Couch-Auth nicht konfiguriert (configureCouchAuth fehlt)');
+  }
+  const token = await accessTokenProvider();
   const headers = new Headers(init.headers);
   headers.set('Authorization', `Bearer ${token}`);
   if (init.body && !headers.has('Content-Type')) {

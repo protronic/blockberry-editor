@@ -37,6 +37,7 @@ Die App bietet:
 - Öffnen und Speichern von `.blockberry.json`-Projektdateien in OpenCloud
 - OpenCloud-Autosave, Speichern unter, Konfliktprüfung und Schreibschutz
 - Blockly-Arbeitsfläche mit einem Mini-SPS-Beispielprojekt
+- Geräteprofile aus CouchDB über das OpenCloud-Access-Token (Client `web`, kein Extra-Keycloak-Login)
 - Textvorschau des erzeugten `.be`-Berry-Skripts
 - Download des generierten `.be`-Skripts
 

@@ -1,13 +1,35 @@
 # Keycloak-Token holen, Claims prüfen, optional CouchDB-Smoke-Test.
 # Couch-URL anpassen oder per Env setzen: $env:COUCH_URL = "https://..."
+#
+# Usage:
+#   .\scripts\test.ps1
+#   .\scripts\test.ps1 -OpenCloud
+#
+# -OpenCloud: Token vom Keycloak-Client "web" (OpenCloud unter oc.protronic-gmbh.de),
+#             um zu prüfen, ob _couchdb.roles auch dort im Access Token landet.
+
+param(
+  [switch]$OpenCloud
+)
 
 $KEYCLOAK_URL = "https://keycloak.protronic-gmbh.de"
 $REALM = "openCloud"
-$CLIENT_ID = "blockberry-editor-client"
+$OPENCLOUD_URL = "https://oc.protronic-gmbh.de"
+$CLIENT_ID = if ($OpenCloud) { "web" } else { "blockberry-editor-client" }
 $COUCH_URL = if ($env:COUCH_URL) { $env:COUCH_URL.TrimEnd("/") } else { "https://couch.protronic-gmbh.de/couchdb" }
 $COUCH_DB = if ($env:COUCH_DB) { $env:COUCH_DB } else { "blockberry-projects" }
 
 $ErrorActionPreference = "Stop"
+
+if ($OpenCloud) {
+  Write-Host "Modus: OpenCloud" -ForegroundColor Cyan
+  Write-Host "  Host:       $OPENCLOUD_URL"
+  Write-Host "  Client-ID:  $CLIENT_ID"
+  Write-Host "  Hinweis: Am Client 'web' muss Direct Access Grants aktiv sein (nur für diesen Smoke-Test),"
+  Write-Host "           und der Client Scope mit Mapper _couchdb.roles zugewiesen sein.`n"
+} else {
+  Write-Host "Modus: Standalone (Client $CLIENT_ID)`n" -ForegroundColor Cyan
+}
 
 $cred = Get-Credential -Message "Keycloak login (User + Passwort)"
 $env:KEYCLOAK_URL = $KEYCLOAK_URL
@@ -16,10 +38,10 @@ $env:KEYCLOAK_CLIENT_ID = $CLIENT_ID
 $env:KEYCLOAK_USERNAME = $cred.UserName
 $env:KEYCLOAK_PASSWORD = $cred.GetNetworkCredential().Password
 
-Write-Host "`n=== Keycloak JWT ===" -ForegroundColor Cyan
+Write-Host "`n=== Keycloak JWT (client=$CLIENT_ID) ===" -ForegroundColor Cyan
 $token = bun .\scripts\check-keycloak-jwt.ts --fetch --print-token
 if ($LASTEXITCODE -ne 0 -or [string]::IsNullOrWhiteSpace($token)) {
-  throw "Keycloak JWT-Check fehlgeschlagen (Exit $LASTEXITCODE)."
+  throw "Keycloak JWT-Check fehlgeschlagen (Exit $LASTEXITCODE). Client='$CLIENT_ID'."
 }
 $token = $token.Trim()
 Write-Host "Token empfangen ($($token.Length) Zeichen).`n"
@@ -36,6 +58,9 @@ $headers = @{
 }
 
 Write-Host "=== CouchDB Smoke ($COUCH_URL) ===" -ForegroundColor Cyan
+if ($OpenCloud) {
+  Write-Host "(Token stammt vom OpenCloud-Client 'web' / $OPENCLOUD_URL)`n"
+}
 
 Write-Host "GET /_session ..."
 $session = Invoke-RestMethod -Headers $headers -Uri "$COUCH_URL/_session"
@@ -55,7 +80,7 @@ $docId = "project:smoke-$(Get-Date -Format 'yyyyMMdd-HHmmss')"
 $doc = @{
   format    = "blockberry"
   version   = 1
-  name      = "smoke-test"
+  name      = if ($OpenCloud) { "smoke-test-opencloud" } else { "smoke-test" }
   savedAt   = (Get-Date).ToUniversalTime().ToString("o")
   workspace = @{}
 } | ConvertTo-Json -Compress
@@ -68,3 +93,6 @@ $put = Invoke-RestMethod -Method Put -Headers $headers `
 $put | ConvertTo-Json -Depth 5
 
 Write-Host "`nOK: CouchDB Smoke-Test erfolgreich." -ForegroundColor Green
+if ($OpenCloud) {
+  Write-Host "OpenCloud-Client 'web' kann Couch mit demselben JWT-Pfad authentifizieren." -ForegroundColor Green
+}

@@ -17,6 +17,21 @@
         />
       </label>
 
+      <label class="device-profile">
+        <span>Gerät</span>
+        <select
+          v-model="selectedProfileId"
+          :disabled="isReadOnly"
+          aria-label="Geräteprofil"
+          @change="onDeviceProfileChange"
+        >
+          <option value="">Alle Blöcke</option>
+          <option v-for="profile in profileOptions" :key="profile.id" :value="profile.id">
+            {{ profile.name }}
+          </option>
+        </select>
+      </label>
+
       <nav class="top-actions" aria-label="Projektaktionen">
         <button
           class="button ghost"
@@ -96,11 +111,22 @@ import * as Blockly from 'blockly/core';
 import 'blockly/blocks';
 import * as De from 'blockly/msg/de';
 import type {Resource} from '@opencloud-eu/web-client';
+import {useAuthStore} from '@opencloud-eu/web-pkg';
 import {computed, nextTick, onBeforeUnmount, onMounted, ref, shallowRef, watch} from 'vue';
 import {
+  configureCouchAuth,
+  listCloudProfiles,
+} from '../web/couch';
+import {
   berryGenerator,
-  blockBerryToolbox,
+  bundledDeviceProfiles,
+  deviceProfiles,
+  refreshSpsChannelFields,
   registerBlockBerryBlocks,
+  setActiveDeviceProfile,
+  setDeviceProfiles,
+  toolboxForProfile,
+  type DeviceProfile,
 } from './library';
 
 type ProjectFile = {
@@ -109,6 +135,8 @@ type ProjectFile = {
   name: string;
   savedAt: string;
   workspace: object;
+  /** Optional device profile id (e.g. pico_telemetry). */
+  deviceProfile?: string;
 };
 
 const props = withDefaults(
@@ -124,9 +152,20 @@ const emit = defineEmits<{
   (event: 'update:currentContent', value: string): void;
 }>();
 
+const authStore = useAuthStore();
+configureCouchAuth(async () => {
+  const token = authStore.accessToken;
+  if (!token) {
+    throw new Error('Kein OpenCloud Access Token — bitte in OpenCloud anmelden');
+  }
+  return token;
+});
+
 const editorElement = ref<HTMLElement>();
 const toastElement = ref<HTMLElement>();
 const projectName = ref('Neue Steuerung');
+const selectedProfileId = ref('');
+const profileOptions = ref<DeviceProfile[]>([]);
 const generatedCode = ref('# Generator wird initialisiert …');
 const blockCount = ref(0);
 // Blockly relies on identity comparisons in its internal data structures
@@ -211,13 +250,73 @@ function resourceExpectsFileContent(resource: Resource | undefined): boolean {
 }
 
 function projectState(): ProjectFile {
+  const profileId = selectedProfileId.value.trim();
   return {
     format: 'blockberry',
     version: 1,
     name: projectName.value.trim() || 'Unbenanntes Projekt',
     savedAt: new Date().toISOString(),
     workspace: Blockly.serialization.workspaces.save(workspace.value!),
+    ...(profileId ? {deviceProfile: profileId} : {}),
   };
+}
+
+function syncProfileOptions(): void {
+  profileOptions.value = [...deviceProfiles];
+}
+
+function applyDeviceProfile(profileId: string, announce = false): void {
+  selectedProfileId.value = profileId;
+  setActiveDeviceProfile(profileId || null);
+  if (!workspace.value) return;
+  workspace.value.updateToolbox(
+    props.isReadOnly ? undefined : toolboxForProfile(profileId || null),
+  );
+  refreshSpsChannelFields(workspace.value);
+  if (announce) {
+    const profile = deviceProfiles.find((entry) => entry.id === profileId);
+    showToast(profile ? `Profil: ${profile.name}` : 'Alle Blöcke');
+  }
+}
+
+function onDeviceProfileChange(): void {
+  applyDeviceProfile(selectedProfileId.value, true);
+  scheduleUpdate();
+}
+
+function showToast(message: string): void {
+  if (!toastElement.value) return;
+  window.clearTimeout(toastTimer);
+  toastElement.value.textContent = message;
+  toastElement.value.classList.add('visible');
+  toastTimer = window.setTimeout(() => toastElement.value?.classList.remove('visible'), 2200);
+}
+
+async function loadDeviceProfilesFromCouch(): Promise<void> {
+  setDeviceProfiles(bundledDeviceProfiles());
+  syncProfileOptions();
+
+  if (!authStore.accessToken) {
+    console.warn('OpenCloud Access Token fehlt — Couch-Profile übersprungen');
+    return;
+  }
+
+  try {
+    const profiles = await listCloudProfiles();
+    if (!profiles.length) return;
+    setDeviceProfiles(profiles);
+    syncProfileOptions();
+    if (
+      selectedProfileId.value &&
+      !profiles.some((profile) => profile.id === selectedProfileId.value)
+    ) {
+      applyDeviceProfile('');
+    } else {
+      applyDeviceProfile(selectedProfileId.value);
+    }
+  } catch (error) {
+    console.warn('Cloud device profiles unavailable, using bundled fallback', error);
+  }
 }
 
 function parseProject(content: string): ProjectFile {
@@ -313,6 +412,7 @@ function loadProject(content: string): void {
     workspace.value!.clear();
     Blockly.serialization.workspaces.load(project.workspace, workspace.value!);
     projectName.value = project.name || 'Unbenanntes Projekt';
+    applyDeviceProfile(project.deviceProfile ?? '');
     lastContent = content;
     refreshPreview();
     window.setTimeout(fitWorkspace, 30);
@@ -373,11 +473,7 @@ function exportScript(): void {
 
 async function copyCode(): Promise<void> {
   await navigator.clipboard.writeText(generatedCode.value);
-  if (!toastElement.value) return;
-  window.clearTimeout(toastTimer);
-  toastElement.value.textContent = 'Berry-Code kopiert';
-  toastElement.value.classList.add('visible');
-  toastTimer = window.setTimeout(() => toastElement.value?.classList.remove('visible'), 2200);
+  showToast('Berry-Code kopiert');
 }
 
 watch(
@@ -423,7 +519,9 @@ onMounted(async () => {
   });
 
   workspace.value = Blockly.inject(editorElement.value!, {
-    toolbox: props.isReadOnly ? undefined : blockBerryToolbox,
+    toolbox: props.isReadOnly
+      ? undefined
+      : toolboxForProfile(selectedProfileId.value || null),
     theme: blockBerryTheme,
     readOnly: props.isReadOnly,
     renderer: 'zelos',
@@ -452,6 +550,8 @@ onMounted(async () => {
     Blockly.svgResize(workspace.value);
   });
   resizeObserver.observe(editorElement.value!);
+
+  await loadDeviceProfilesFromCouch();
 
   try {
     loadContent(props.currentContent || '');
