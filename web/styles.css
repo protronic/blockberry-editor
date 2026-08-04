@@ -655,6 +655,15 @@ dialog::backdrop {
   fill: #aebbb5 !important;
 }
 
+/* Tailwind preflight sets svg { display:block }, which overrides Blockly's
+   display="none" attribute on hidden flyout / workspace scrollbars. */
+.blocklyFlyoutScrollbar[display='none'],
+.blocklyMainWorkspaceScrollbar[display='none'],
+svg.blocklyScrollbarVertical[display='none'],
+svg.blocklyScrollbarHorizontal[display='none'] {
+  display: none !important;
+}
+
 @media (max-width: 1050px) {
   .brand-tag,
   .project-name span,

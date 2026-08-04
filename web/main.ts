@@ -1,6 +1,7 @@
 import * as Blockly from 'blockly/core';
 import 'blockly/blocks';
 import * as De from 'blockly/msg/de';
+import {blocklyMediaUrl} from '../src/blocklyMedia.ts';
 import {
   berryGenerator,
   blockBerryToolbox,
@@ -70,6 +71,7 @@ const workspace = Blockly.inject('blockly-editor', {
   renderer: 'zelos',
   trashcan: true,
   sounds: false,
+  media: blocklyMediaUrl(),
   move: {
     scrollbars: {
       horizontal: true,
