@@ -73,7 +73,16 @@
             <span class="eyebrow mint">Live-Vorschau</span>
             <h2>.be Script</h2>
           </div>
-          <button class="icon-button dark" type="button" @click="copyCode">Kopieren</button>
+          <div class="code-heading-actions">
+            <img
+              v-if="livePreviewImage"
+              class="live-preview-thumb"
+              :src="livePreviewImage"
+              alt=""
+              title="Eingebettete Dateivorschau"
+            />
+            <button class="icon-button dark" type="button" @click="copyCode">Kopieren</button>
+          </div>
         </div>
 
         <div class="runtime-badge">
@@ -98,7 +107,7 @@
 
     <footer class="statusbar">
       <span><i class="status-ready" /> BlockBerry bereit</span>
-      <span>JSON-Projekt → Blockly → Berry</span>
+      <span>.bbprj → Blockly → Berry</span>
       <span>{{ blockCount }} Blöcke</span>
     </footer>
 
@@ -128,16 +137,13 @@ import {
   toolboxForProfile,
   type DeviceProfile,
 } from './library';
-
-type ProjectFile = {
-  format: 'blockberry';
-  version: 1;
-  name: string;
-  savedAt: string;
-  workspace: object;
-  /** Optional device profile id (e.g. pico_telemetry). */
-  deviceProfile?: string;
-};
+import {captureWorkspacePreview} from './preview';
+import {
+  type ProjectFile,
+  parseProject,
+  projectSignature,
+  stripKnownProjectExtension,
+} from './project';
 
 const props = withDefaults(
   defineProps<{
@@ -168,6 +174,7 @@ const selectedProfileId = ref('');
 const profileOptions = ref<DeviceProfile[]>([]);
 const generatedCode = ref('# Generator wird initialisiert …');
 const blockCount = ref(0);
+const livePreviewImage = ref('');
 // Blockly relies on identity comparisons in its internal data structures
 // (e.g. the connection database). A deep `ref` would wrap the workspace in a
 // reactive proxy and corrupt those lookups, so loads abort halfway through.
@@ -251,14 +258,23 @@ function resourceExpectsFileContent(resource: Resource | undefined): boolean {
 
 function projectState(): ProjectFile {
   const profileId = selectedProfileId.value.trim();
-  return {
+  const name = projectName.value.trim() || 'Unbenanntes Projekt';
+  const state: ProjectFile = {
     format: 'blockberry',
     version: 1,
-    name: projectName.value.trim() || 'Unbenanntes Projekt',
+    name,
     savedAt: new Date().toISOString(),
     workspace: Blockly.serialization.workspaces.save(workspace.value!),
     ...(profileId ? {deviceProfile: profileId} : {}),
   };
+
+  try {
+    state.preview = captureWorkspacePreview(workspace.value!, name);
+  } catch {
+    // Preview is best-effort; never block saving the project itself.
+  }
+
+  return state;
 }
 
 function syncProfileOptions(): void {
@@ -319,28 +335,20 @@ async function loadDeviceProfilesFromCouch(): Promise<void> {
   }
 }
 
-function parseProject(content: string): ProjectFile {
-  const project = JSON.parse(content) as Partial<ProjectFile>;
-  if (project.format !== 'blockberry' || project.version !== 1 || !project.workspace) {
-    throw new Error('Keine gültige BlockBerry-Projektdatei');
-  }
-  return project as ProjectFile;
-}
-
 function refreshPreview(): void {
   if (!workspace.value) return;
   try {
     generatedCode.value = berryGenerator.workspaceToCode(workspace.value);
     blockCount.value = workspace.value.getAllBlocks(false).length;
+    livePreviewImage.value = captureWorkspacePreview(
+      workspace.value,
+      projectName.value.trim() || 'Unbenanntes Projekt',
+    ).image;
   } catch (error) {
     generatedCode.value = `# Generatorfehler\n# ${
       error instanceof Error ? error.message : String(error)
     }`;
   }
-}
-
-function projectSignature(project: Partial<ProjectFile>): string {
-  return JSON.stringify({name: project.name, workspace: project.workspace});
 }
 
 function commitWorkspaceToOpenCloud(): void {
@@ -351,7 +359,8 @@ function commitWorkspaceToOpenCloud(): void {
   const state = projectState();
   if (lastContent) {
     try {
-      if (projectSignature(JSON.parse(lastContent) as Partial<ProjectFile>) === projectSignature(state)) {
+      const previous = JSON.parse(lastContent) as ProjectFile;
+      if (previous.workspace && projectSignature(previous) === projectSignature(state)) {
         return;
       }
     } catch {
@@ -415,6 +424,9 @@ function loadProject(content: string): void {
     applyDeviceProfile(project.deviceProfile ?? '');
     lastContent = content;
     refreshPreview();
+    if (project.preview?.image) {
+      livePreviewImage.value = project.preview.image;
+    }
     window.setTimeout(fitWorkspace, 30);
   });
   hasAppliedContent = true;
@@ -431,8 +443,7 @@ function loadContent(content: string): void {
       return;
     }
 
-    projectName.value =
-      props.resource?.name?.replace(/\.blockberry\.json$|\.json$/i, '') || 'Neue Steuerung';
+    projectName.value = stripKnownProjectExtension(props.resource?.name);
     loadStarter({persist: true});
     return;
   }
@@ -591,6 +602,21 @@ onBeforeUnmount(() => {
 .blockly-editor {
   width: 100%;
   height: 100%;
+}
+
+.code-heading-actions {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.live-preview-thumb {
+  width: 54px;
+  height: 30px;
+  object-fit: cover;
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  border-radius: 7px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.25);
 }
 
 button:disabled,
