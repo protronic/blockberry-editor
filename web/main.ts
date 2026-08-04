@@ -4,7 +4,13 @@ import * as De from 'blockly/msg/de';
 import {
   berryGenerator,
   blockBerryToolbox,
+  bundledDeviceProfiles,
+  deviceProfiles,
+  refreshSpsChannelFields,
   registerBlockBerryBlocks,
+  setActiveDeviceProfile,
+  setDeviceProfiles,
+  toolboxForProfile,
 } from '../src/index.ts';
 import {
   currentUsername,
@@ -14,6 +20,7 @@ import {
   logout,
 } from './auth.ts';
 import {
+  listCloudProfiles,
   listCloudProjects,
   loadCloudProject,
   saveCloudProject,
@@ -85,6 +92,7 @@ const workspace = Blockly.inject('blockly-editor', {
 });
 
 const projectName = element<HTMLInputElement>('project-name');
+const deviceProfileSelect = element<HTMLSelectElement>('device-profile');
 const codeElement = element<HTMLElement>('berry-code');
 const lineCount = element<HTMLElement>('line-count');
 const byteCount = element<HTMLElement>('byte-count');
@@ -172,13 +180,74 @@ function showToast(message: string): void {
   toastTimer = window.setTimeout(() => toast.classList.remove('visible'), 2200);
 }
 
+function selectedProfileId(): string {
+  return deviceProfileSelect.value.trim();
+}
+
+function applyDeviceProfile(profileId: string, announce = false): void {
+  deviceProfileSelect.value = profileId;
+  setActiveDeviceProfile(profileId || null);
+  workspace.updateToolbox(toolboxForProfile(profileId || null));
+  refreshSpsChannelFields(workspace);
+  if (announce) {
+    const profile = deviceProfiles.find((entry) => entry.id === profileId);
+    showToast(profile ? `Profil: ${profile.name}` : 'Alle Blöcke');
+  }
+  persistLocally();
+}
+
+function populateDeviceProfiles(): void {
+  const selected = selectedProfileId();
+  deviceProfileSelect.replaceChildren();
+
+  const allOption = document.createElement('option');
+  allOption.value = '';
+  allOption.textContent = 'Alle Blöcke';
+  deviceProfileSelect.append(allOption);
+
+  for (const profile of deviceProfiles) {
+    const option = document.createElement('option');
+    option.value = profile.id;
+    option.textContent = profile.name;
+    deviceProfileSelect.append(option);
+  }
+
+  if (selected && deviceProfiles.some((profile) => profile.id === selected)) {
+    deviceProfileSelect.value = selected;
+  } else if (selected) {
+    applyDeviceProfile('');
+  }
+}
+
+async function loadDeviceProfilesFromCloud(): Promise<boolean> {
+  if (!isAuthenticated()) return false;
+  try {
+    const profiles = await listCloudProfiles();
+    if (!profiles.length) return false;
+    setDeviceProfiles(profiles);
+    populateDeviceProfiles();
+    applyDeviceProfile(selectedProfileId());
+    return true;
+  } catch (error) {
+    console.warn('Cloud device profiles unavailable, using bundled fallback', error);
+    return false;
+  }
+}
+
+function useBundledDeviceProfiles(): void {
+  setDeviceProfiles(bundledDeviceProfiles());
+  populateDeviceProfiles();
+}
+
 function projectState(): ProjectFile {
+  const profileId = selectedProfileId();
   return {
     format: 'blockberry',
     version: 1,
     name: projectName.value.trim() || 'Unbenanntes Projekt',
     savedAt: new Date().toISOString(),
     workspace: Blockly.serialization.workspaces.save(workspace),
+    ...(profileId ? {deviceProfile: profileId} : {}),
   };
 }
 
@@ -226,6 +295,7 @@ function loadProject(project: Partial<ProjectFile>): void {
   workspace.clear();
   Blockly.serialization.workspaces.load(project.workspace, workspace);
   projectName.value = project.name || 'Unbenanntes Projekt';
+  applyDeviceProfile(project.deviceProfile ?? '');
   scheduleUpdate();
   window.setTimeout(() => workspace.zoomToFit(), 30);
 }
@@ -319,6 +389,10 @@ workspace.addChangeListener((event) => {
 
 projectName.addEventListener('input', scheduleUpdate);
 
+deviceProfileSelect.addEventListener('change', () => {
+  applyDeviceProfile(selectedProfileId(), true);
+});
+
 element('new-project').addEventListener('click', () => {
   if (workspace.getAllBlocks(false).length && !window.confirm('Aktuelles Projekt verwerfen?')) return;
   projectName.value = 'Neue Steuerung';
@@ -363,8 +437,11 @@ element('copy-code').addEventListener('click', async () => {
 element('center-workspace').addEventListener('click', () => workspace.zoomToFit());
 
 authButton.addEventListener('click', async () => {
-  if (isAuthenticated()) await logout();
-  else await login();
+  if (isAuthenticated()) {
+    await logout();
+    return;
+  }
+  await login();
 });
 
 element('save-cloud').addEventListener('click', async () => {
@@ -435,6 +512,8 @@ deployForm.addEventListener('submit', async (event) => {
 
 window.addEventListener('resize', () => Blockly.svgResize(workspace));
 
+populateDeviceProfiles();
+
 const saved = localStorage.getItem(STORAGE_KEY);
 if (saved) {
   try {
@@ -446,6 +525,8 @@ if (saved) {
   loadStarter();
 }
 
-void initAuth().then(() => {
+void initAuth().then(async () => {
   updateAuthUi();
+  const fromCloud = await loadDeviceProfilesFromCloud();
+  if (!fromCloud) useBundledDeviceProfiles();
 });

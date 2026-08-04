@@ -1,5 +1,6 @@
-import {couchDbUrl} from './config.ts';
+import {appConfig, couchDbUrl} from './config.ts';
 import {getAccessToken} from './auth.ts';
+import type {DeviceProfile} from '../src/device_profiles.ts';
 
 export type ProjectFile = {
   format: 'blockberry';
@@ -7,6 +8,8 @@ export type ProjectFile = {
   name: string;
   savedAt: string;
   workspace: object;
+  /** Optional device profile id (e.g. pico_telemetry). */
+  deviceProfile?: string;
 };
 
 export type CloudProjectDoc = ProjectFile & {
@@ -16,22 +19,34 @@ export type CloudProjectDoc = ProjectFile & {
   owner?: string;
 };
 
-type AllDocsResponse = {
+/** One device profile document in the profiles CouchDB. */
+export type CloudProfileDoc = DeviceProfile & {
+  _id: string;
+  _rev?: string;
+  type: 'blockberry-device-profile';
+  format: 'blockberry-device-profile';
+  version: 1;
+};
+
+type AllDocsResponse<T> = {
   rows: Array<{
     id: string;
-    doc?: CloudProjectDoc & {error?: string};
+    doc?: T & {error?: string};
   }>;
 };
 
-async function couchFetch(path: string, init: RequestInit = {}): Promise<Response> {
+async function couchFetch(
+  path: string,
+  init: RequestInit = {},
+  db = appConfig.couchDb,
+): Promise<Response> {
   const token = await getAccessToken();
   const headers = new Headers(init.headers);
   headers.set('Authorization', `Bearer ${token}`);
   if (init.body && !headers.has('Content-Type')) {
     headers.set('Content-Type', 'application/json');
   }
-  const response = await fetch(couchDbUrl(path), {...init, headers});
-  return response;
+  return fetch(couchDbUrl(path, db), {...init, headers});
 }
 
 async function readJson<T>(response: Response): Promise<T> {
@@ -52,6 +67,36 @@ async function readJson<T>(response: Response): Promise<T> {
   return data as T;
 }
 
+function isProfileDoc(doc: unknown): doc is CloudProfileDoc {
+  if (!doc || typeof doc !== 'object') return false;
+  const candidate = doc as Partial<CloudProfileDoc> & {error?: string};
+  return Boolean(
+    !candidate.error &&
+      candidate.format === 'blockberry-device-profile' &&
+      candidate.version === 1 &&
+      typeof candidate.id === 'string' &&
+      typeof candidate.name === 'string' &&
+      Array.isArray(candidate.blocks),
+  );
+}
+
+export function toDeviceProfile(doc: CloudProfileDoc): DeviceProfile {
+  return {
+    id: doc.id,
+    name: doc.name,
+    description: doc.description,
+    blocks: [...doc.blocks],
+    ...(doc.channels
+      ? {
+          channels: {
+            inputs: doc.channels.inputs ? [...doc.channels.inputs] : undefined,
+            outputs: doc.channels.outputs ? [...doc.channels.outputs] : undefined,
+          },
+        }
+      : {}),
+  };
+}
+
 export function projectDocId(name: string, existingId?: string): string {
   if (existingId?.startsWith('project:')) return existingId;
   const slug = name
@@ -67,7 +112,7 @@ export function projectDocId(name: string, existingId?: string): string {
 
 export async function listCloudProjects(): Promise<CloudProjectDoc[]> {
   const response = await couchFetch('_all_docs?include_docs=true');
-  const data = await readJson<AllDocsResponse>(response);
+  const data = await readJson<AllDocsResponse<CloudProjectDoc>>(response);
   return data.rows
     .map((row) => row.doc)
     .filter((doc): doc is CloudProjectDoc =>
@@ -106,4 +151,19 @@ export async function saveCloudProject(
   });
   const result = await readJson<{ok: boolean; id: string; rev: string}>(response);
   return {...doc, _id: result.id, _rev: result.rev};
+}
+
+/** Loads device profiles from the profiles CouchDB (requires login). */
+export async function listCloudProfiles(): Promise<DeviceProfile[]> {
+  const response = await couchFetch(
+    '_all_docs?include_docs=true',
+    {},
+    appConfig.couchProfilesDb,
+  );
+  const data = await readJson<AllDocsResponse<CloudProfileDoc>>(response);
+  return data.rows
+    .map((row) => row.doc)
+    .filter(isProfileDoc)
+    .map(toDeviceProfile)
+    .sort((a, b) => a.name.localeCompare(b.name, 'de'));
 }

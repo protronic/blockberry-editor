@@ -17,10 +17,11 @@ export const appConfig = {
     'https://couch.protronic-gmbh.de/couchdb',
   ).replace(/\/$/, ''),
   couchDb: required('VITE_COUCH_DB', 'blockberry-projects'),
+  couchProfilesDb: required('VITE_COUCH_PROFILES_DB', 'bockberry-profiles'),
 };
 
-export function couchDbUrl(path = ''): string {
-  const base = `${appConfig.couchUrl}/${appConfig.couchDb}`;
+export function couchDbUrl(path = '', db = appConfig.couchDb): string {
+  const base = `${appConfig.couchUrl}/${db}`;
   if (!path) return base;
   return `${base}/${path.replace(/^\//, '')}`;
 }

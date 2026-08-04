@@ -118,18 +118,45 @@ button {
   letter-spacing: 0.08em;
 }
 
-.project-name input {
+.device-profile {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  color: #8d9b95;
+  font-size: 11px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+}
+
+.project-name input,
+.device-profile select {
   width: 170px;
   padding: 7px 9px;
   color: #edf3ef;
+  font: inherit;
+  text-transform: none;
+  letter-spacing: normal;
   background: transparent;
   border: 1px solid transparent;
   border-radius: 5px;
   outline: none;
 }
 
+.device-profile select {
+  width: 160px;
+  cursor: pointer;
+}
+
+.device-profile select option {
+  color: #24302b;
+  background: #f7f8f6;
+}
+
 .project-name input:hover,
-.project-name input:focus {
+.project-name input:focus,
+.device-profile select:hover,
+.device-profile select:focus {
   background: #1b2722;
   border-color: #3a4842;
 }
@@ -664,7 +691,8 @@ dialog::backdrop {
     padding: 10px 14px;
   }
 
-  .project-name {
+  .project-name,
+  .device-profile {
     display: none;
   }
 

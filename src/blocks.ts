@@ -1,4 +1,5 @@
 import * as Blockly from 'blockly/core';
+import {registerSpsChannelExtensions} from './active_profile.js';
 
 const definitions = Blockly.common.createBlockDefinitionsFromJsonArray([
   {
@@ -27,20 +28,22 @@ const definitions = Blockly.common.createBlockDefinitionsFromJsonArray([
   {
     type: 'sps_digital_input',
     message0: 'Eingang %1',
-    args0: [{type: 'field_input', name: 'CHANNEL', text: 'DI1'}],
+    args0: [{type: 'input_dummy', name: 'CHANNEL_ROW'}],
     output: 'Boolean',
     colour: 210,
+    extensions: ['bb_sps_channel_input'],
   },
   {
     type: 'sps_digital_output',
     message0: 'Ausgang %1 auf %2',
     args0: [
-      {type: 'field_input', name: 'CHANNEL', text: 'DO1'},
+      {type: 'input_dummy', name: 'CHANNEL_ROW'},
       {type: 'input_value', name: 'VALUE', check: 'Boolean'},
     ],
     previousStatement: null,
     nextStatement: null,
     colour: 210,
+    extensions: ['bb_sps_channel_output'],
   },
   {
     type: 'sensor_ready',
@@ -314,6 +317,7 @@ const definitions = Blockly.common.createBlockDefinitionsFromJsonArray([
 
 /** Registers BlockBerry's domain blocks in the active Blockly registry. */
 export function registerBlockBerryBlocks(): void {
+  registerSpsChannelExtensions();
   Blockly.common.defineBlocks(definitions);
 }
 

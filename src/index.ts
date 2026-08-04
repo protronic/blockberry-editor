@@ -7,4 +7,16 @@ export {
   BerryOrder,
   berryGenerator,
 } from './berry_generator.js';
-export {blockBerryToolbox} from './toolbox.js';
+export {blockBerryToolbox, toolboxForProfile} from './toolbox.js';
+export {
+  deviceProfiles,
+  getDeviceProfile,
+  setDeviceProfiles,
+  bundledDeviceProfiles,
+  type DeviceProfile,
+} from './device_profiles.js';
+export {
+  getActiveDeviceProfile,
+  refreshSpsChannelFields,
+  setActiveDeviceProfile,
+} from './active_profile.js';

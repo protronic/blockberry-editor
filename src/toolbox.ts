@@ -1,4 +1,11 @@
 import type * as Blockly from 'blockly/core';
+import {getDeviceProfile} from './device_profiles.js';
+
+type ToolboxItem = Blockly.utils.toolbox.ToolboxItemInfo;
+type ToolboxCategory = Blockly.utils.toolbox.StaticCategoryInfo;
+
+/** Core language categories are always available. */
+const CORE_CATEGORY_NAMES = new Set(['Logik', 'Mathematik', 'Text', 'Variablen']);
 
 /** Default toolbox focused on small PLC-style IoT workflows. */
 export const blockBerryToolbox: Blockly.utils.toolbox.ToolboxDefinition = {
@@ -119,3 +126,52 @@ export const blockBerryToolbox: Blockly.utils.toolbox.ToolboxDefinition = {
     },
   ],
 };
+
+function isCategory(item: ToolboxItem): item is ToolboxCategory {
+  return Boolean(item && typeof item === 'object' && 'kind' in item && item.kind === 'category');
+}
+
+function blockType(item: ToolboxItem): string | undefined {
+  if (item && typeof item === 'object' && 'kind' in item && item.kind === 'block' && 'type' in item) {
+    return String((item as {type: string}).type);
+  }
+  return undefined;
+}
+
+/**
+ * Returns the full toolbox, or a filtered copy for the given device profile id.
+ * Unknown / empty profile id → unfiltered toolbox. Core categories always remain.
+ */
+export function toolboxForProfile(
+  profileId?: string | null,
+): Blockly.utils.toolbox.ToolboxDefinition {
+  const profile = getDeviceProfile(profileId ?? undefined);
+  if (!profile) return blockBerryToolbox;
+
+  const allowed = new Set(profile.blocks);
+  const source = blockBerryToolbox as Blockly.utils.toolbox.ToolboxInfo;
+  const contents: ToolboxItem[] = [];
+
+  for (const item of source.contents ?? []) {
+    if (!isCategory(item)) {
+      contents.push(item);
+      continue;
+    }
+
+    if (CORE_CATEGORY_NAMES.has(item.name ?? '')) {
+      contents.push(item);
+      continue;
+    }
+
+    const childItems = item.contents ?? [];
+    const filtered = childItems.filter((child) => {
+      const type = blockType(child);
+      return type !== undefined && allowed.has(type);
+    });
+
+    if (filtered.length === 0) continue;
+    contents.push({...item, contents: filtered});
+  }
+
+  return {kind: 'categoryToolbox', contents};
+}

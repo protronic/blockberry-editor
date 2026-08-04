@@ -1,0 +1,30 @@
+{
+  "_id": "profile:pico_telemetry",
+  "type": "blockberry-device-profile",
+  "format": "blockberry-device-profile",
+  "version": 1,
+  "id": "pico_telemetry",
+  "name": "Pico Telemetry",
+  "description": "BMx280-Sensor, Mini-SPS, Eskalation, Signale, ThingsBoard-Telemetrie und Debug.",
+  "blocks": [
+    "mini_sps_task",
+    "sps_wait_ms",
+    "sps_digital_input",
+    "sps_digital_output",
+    "sensor_ready",
+    "sensor_temp",
+    "sensor_pressure",
+    "sensor_humidity",
+    "escalation_rule",
+    "signal_set",
+    "monitor_value",
+    "thingsboard_telemetry",
+    "thingsboard_attribute",
+    "thingsboard_connected",
+    "log_print"
+  ],
+  "channels": {
+    "inputs": ["LED0", "BOOTSEL"],
+    "outputs": ["LED0"]
+  }
+}

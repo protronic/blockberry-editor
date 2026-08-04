@@ -58,6 +58,12 @@ Defaults (überschreibbar per `.env`, siehe `.env.example`):
 | `VITE_KEYCLOAK_CLIENT_ID` | `blockberry-editor-client` |
 | `VITE_COUCH_URL` | `https://couch.protronic-gmbh.de/couchdb` |
 | `VITE_COUCH_DB` | `blockberry-projects` |
+| `VITE_COUCH_PROFILES_DB` | `bockberry-profiles` |
+
+Geräteprofile werden nach dem Login aus `VITE_COUCH_PROFILES_DB` geladen
+(Dokumente mit `format: "blockberry-device-profile"`). Ohne Login oder bei leerer
+DB gilt der Fallback `src/device_profiles.json`. Seed-Beispiel:
+`scripts/seed-pico-telemetry-profile.json`.
 
 Am Keycloak-Client müssen **Valid redirect URIs** und **Web origins** die
 Editor-URL enthalten:
