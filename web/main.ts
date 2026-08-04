@@ -5,7 +5,7 @@ import {
   berryGenerator,
   blockBerryToolbox,
   registerBlockBerryBlocks,
-} from '../src/index.ts';
+} from '../src/library.ts';
 import './styles.css';
 
 const STORAGE_KEY = 'blockberry.project.v1';

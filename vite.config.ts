@@ -1,12 +1,13 @@
-import {defineConfig} from 'vite';
+import {defineConfig} from '@opencloud-eu/extension-sdk';
 
-const webPath = 'webapps-dev';
-const app = 'blockberry-editor';
-
-export default defineConfig(({mode}) => ({
-  base: mode === 'production' ? `/static/${webPath}/${app}/` : '/',
+export default defineConfig({
+  name: 'blockberry-editor',
   build: {
     outDir: 'dist/web',
-    emptyOutDir: false,
+    emptyOutDir: true,
   },
-}));
+  test: {
+    environment: 'node',
+    include: ['test/**/*.test.ts'],
+  },
+});

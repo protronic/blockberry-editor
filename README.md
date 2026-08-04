@@ -25,23 +25,47 @@ Programme übernommen.
 
 ## Einbindung
 
-### Webapp starten
+### OpenCloud-Webapp
+
+Die Oberfläche ist als native OpenCloud-Dateiapp auf Basis des
+[`web-app-skeleton`](https://github.com/opencloud-eu/web-app-skeleton) aufgebaut.
+Sie registriert sich für JSON-Dateien und lädt bzw. speichert das
+`blockberry`-Projektformat über den OpenCloud `AppWrapperRoute`.
+
+Die App bietet:
+
+- Öffnen und Speichern von `.blockberry.json`-Projektdateien in OpenCloud
+- OpenCloud-Autosave, Speichern unter, Konfliktprüfung und Schreibschutz
+- Blockly-Arbeitsfläche mit einem Mini-SPS-Beispielprojekt
+- Textvorschau des erzeugten `.be`-Berry-Skripts
+- Download des generierten `.be`-Skripts
 
 ```sh
-bun install
-bun run dev
+pnpm install
+pnpm run dev
 ```
 
-Die Webapp bietet:
+`pnpm run dev` erzeugt einen Development-Build im Watch-Modus. Dieser wird wie
+im OpenCloud-Webapp-Skeleton beschrieben in einer lokalen OpenCloud-Instanz
+registriert. Der Produktions-Build liegt nach `pnpm run build` in `dist/web`;
+die wiederverwendbare Generatorbibliothek liegt in `dist/lib`.
 
-- Blockly-Arbeitsfläche mit einem Mini-SPS-Beispielprojekt
-- Live-Vorschau des erzeugten Berry-Skripts
-- automatische lokale Sicherung im Browser
-- Import und Export von `.blockberry.json`-Projektdateien
-- Export des generierten `.be`-Skripts
-- konfigurierbaren HTTP-PUT-Upload an ein Gerät
+#### Smoke-Test der OpenCloud-Integration
 
-Der Produktions-Build liegt nach `bun run build` in `dist/web`.
+`test/harness` stellt `src/App.vue` so bereit, wie der OpenCloud `AppWrapper`
+die Komponente einbindet (Dateiinhalt als `currentContent`-Prop, Autosave über
+`update:currentContent`). Damit lässt sich das Lade- und Speicherverhalten ohne
+laufende OpenCloud-Instanz im Browser prüfen:
+
+```sh
+pnpm exec vite --config vite.harness.config.ts   # Dev-Server auf Port 5199
+node test/harness/run-harness.mjs all            # Szenarien mit Assertions
+```
+
+Szenarien: `existing` (Datei öffnen), `late` (Inhalt kommt nach dem Mount),
+`empty` (neue leere Datei → Starterprojekt), `probe` (rohe Blockly-Lade-Matrix
+ohne Assertions). Der Runner erwartet ein Chromium unter
+`/opt/pw-browsers/chromium` oder in `HARNESS_CHROMIUM`.
 
 ### Generator in einer eigenen Oberfläche
 
@@ -113,6 +137,6 @@ Sperrzeit erneut zulässigen Eskalation liefern. Dadurch läuft der untergeordne
 ## Entwicklung
 
 ```sh
-bun install
-bun run check
+pnpm install
+pnpm run check
 ```
