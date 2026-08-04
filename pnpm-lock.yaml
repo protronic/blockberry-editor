@@ -11,6 +11,9 @@ importers:
       blockly:
         specifier: ^13.1.1
         version: 13.2.0(jsdom@29.1.1)
+      keycloak-js:
+        specifier: ^26.2.4
+        version: 26.2.4
       vue:
         specifier: ^3.5.13
         version: 3.5.40(typescript@6.0.3)
@@ -30,6 +33,9 @@ importers:
       '@vitejs/plugin-vue':
         specifier: 6.0.8
         version: 6.0.8(vite@8.1.5(jiti@2.7.0)(yaml@2.9.0))(vue@3.5.40(typescript@6.0.3))
+      pinia:
+        specifier: ^3.0.4
+        version: 3.0.4(typescript@6.0.3)(vue@3.5.40(typescript@6.0.3))
       playwright-core:
         specifier: ^1.62.1
         version: 1.62.1
@@ -1423,6 +1429,9 @@ packages:
   jwt-decode@4.0.0:
     resolution: {integrity: sha512-+KJGIyHgkGuIq3IEBNftfhW/LfWhXUIY6OmyVWjliu5KH1y0fw7VQ8YndE2O4qZdMSd9SqbnC8GOcZEy0Om7sA==}
     engines: {node: '>=18'}
+
+  keycloak-js@26.2.4:
+    resolution: {integrity: sha512-PnXpR3ubETGOt0B/Qt2lxmPbkZr5bc3vlQsOqDoTPPQsZRp7JjhTKxlJ187uWh8qJhvBab6Gsjb06a8ayOPfuw==}
 
   layerr@3.0.0:
     resolution: {integrity: sha512-tv754Ki2dXpPVApOrjTyRo4/QegVb9eVFq4mjqp4+NM5NaX7syQvN5BBNfV/ZpAHCEHV24XdUVrBAoka4jt3pA==}
@@ -3897,6 +3906,8 @@ snapshots:
       graceful-fs: 4.2.11
 
   jwt-decode@4.0.0: {}
+
+  keycloak-js@26.2.4: {}
 
   layerr@3.0.0: {}
 
