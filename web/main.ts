@@ -11,7 +11,7 @@ import {
   setActiveDeviceProfile,
   setDeviceProfiles,
   toolboxForProfile,
-} from '../src/index.ts';
+} from '../src/library.ts';
 import {
   currentUsername,
   initAuth,

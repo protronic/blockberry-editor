@@ -1,7 +1,9 @@
 node_modules/
 dist/
 coverage/
+.__mf__temp/
 *.log
 deploy.*
 .env
 .env.local
+.pnpm-store

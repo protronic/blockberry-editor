@@ -1,5 +1,5 @@
-import {describe, expect, it} from 'bun:test';
-import {toolboxForProfile} from '../src/toolbox.js';
+import {describe, expect, it} from 'vitest';
+import {toolboxForProfile} from '../src/toolbox';
 
 type Category = {
   kind?: string;

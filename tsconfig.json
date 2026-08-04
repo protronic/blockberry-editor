@@ -4,7 +4,7 @@
     "module": "NodeNext",
     "moduleResolution": "NodeNext",
     "declaration": true,
-    "outDir": "dist",
+    "outDir": "dist/lib",
     "rootDir": "src",
     "strict": true,
     "esModuleInterop": true,
@@ -12,5 +12,13 @@
     "forceConsistentCasingInFileNames": true,
     "skipLibCheck": true
   },
-  "include": ["src/**/*.ts", "src/**/*.json"]
+  "include": [
+    "src/berry_generator.ts",
+    "src/blocks.ts",
+    "src/library.ts",
+    "src/toolbox.ts",
+    "src/device_profiles.ts",
+    "src/device_profiles.json",
+    "src/active_profile.ts"
+  ]
 }
