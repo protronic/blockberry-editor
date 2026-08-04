@@ -1,6 +1,7 @@
 import * as Blockly from 'blockly/core';
 import 'blockly/blocks';
 import * as De from 'blockly/msg/de';
+import {createPinia} from 'pinia';
 import {createApp, defineComponent, h, ref, shallowRef} from 'vue';
 import type {Resource} from '@opencloud-eu/web-client';
 import {blockBerryToolbox, registerBlockBerryBlocks} from '../../src/library';
@@ -275,4 +276,5 @@ const Host = defineComponent({
   },
 });
 
-createApp(Host).mount('#host');
+// The OpenCloud host installs Pinia app-wide; App.vue's useAuthStore relies on it.
+createApp(Host).use(createPinia()).mount('#host');
