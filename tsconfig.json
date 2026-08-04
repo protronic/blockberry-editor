@@ -18,7 +18,6 @@
     "src/library.ts",
     "src/toolbox.ts",
     "src/device_profiles.ts",
-    "src/device_profiles.json",
     "src/active_profile.ts"
   ]
 }

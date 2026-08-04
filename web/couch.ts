@@ -22,9 +22,9 @@ export type CloudProjectDoc = ProjectFile & {
 export type CloudProfileDoc = DeviceProfile & {
   _id: string;
   _rev?: string;
-  type: 'blockberry-device-profile';
-  format: 'blockberry-device-profile';
-  version: 1;
+  type?: 'blockberry-device-profile' | string;
+  format?: 'blockberry-device-profile' | string;
+  version?: number | string;
 };
 
 type AllDocsResponse<T> = {
@@ -33,6 +33,122 @@ type AllDocsResponse<T> = {
     doc?: T & {error?: string};
   }>;
 };
+
+type LooseDoc = Record<string, unknown> & {
+  _id?: string;
+  error?: string;
+  format?: unknown;
+  type?: unknown;
+  version?: unknown;
+  id?: unknown;
+  name?: unknown;
+  description?: unknown;
+  blocks?: unknown;
+  workspace?: unknown;
+  channels?: DeviceProfile['channels'];
+  profiles?: unknown;
+};
+
+function profileIdFromDoc(doc: LooseDoc): string | undefined {
+  if (typeof doc.id === 'string' && doc.id.trim()) return doc.id.trim();
+  const couchId = typeof doc._id === 'string' ? doc._id : '';
+  if (couchId.startsWith('profile:')) return couchId.slice('profile:'.length);
+  if (couchId && !couchId.startsWith('_')) return couchId;
+  return undefined;
+}
+
+function isProfileCatalogMarker(doc: LooseDoc): boolean {
+  return (
+    doc.format === 'blockberry-device-profiles' ||
+    doc.type === 'blockberry-device-profiles'
+  );
+}
+
+function looksLikeProjectDoc(doc: LooseDoc): boolean {
+  return (
+    doc.format === 'blockberry' ||
+    doc.type === 'blockberry-project' ||
+    (doc.workspace !== undefined && typeof doc.workspace === 'object')
+  );
+}
+
+function asDeviceProfile(doc: LooseDoc): DeviceProfile | undefined {
+  const id = profileIdFromDoc(doc);
+  if (
+    !id ||
+    typeof doc.name !== 'string' ||
+    !doc.name.trim() ||
+    !Array.isArray(doc.blocks) ||
+    !doc.blocks.every((block) => typeof block === 'string')
+  ) {
+    return undefined;
+  }
+  return {
+    id,
+    name: doc.name.trim(),
+    description: typeof doc.description === 'string' ? doc.description : undefined,
+    blocks: [...(doc.blocks as string[])],
+    ...(doc.channels
+      ? {
+          channels: {
+            inputs: doc.channels.inputs ? [...doc.channels.inputs] : undefined,
+            outputs: doc.channels.outputs ? [...doc.channels.outputs] : undefined,
+          },
+        }
+      : {}),
+  };
+}
+
+/**
+ * Maps Couch `_all_docs` rows to device profiles.
+ *
+ * A profile doc needs at least `name` + `blocks[]`. Id comes from `id` or `_id`
+ * (e.g. `pico_telemetry_v1`). `version` is free-form device metadata (e.g. `"v1"`).
+ * Catalog docs with `profiles: [...]` are also supported.
+ */
+export function deviceProfilesFromCouchRows(
+  rows: Array<{id?: string; doc?: unknown}>,
+): DeviceProfile[] {
+  const profiles: DeviceProfile[] = [];
+  const seen = new Set<string>();
+
+  const push = (profile: DeviceProfile | undefined, sourceId: string) => {
+    if (!profile) {
+      console.warn(`Couch profile row "${sourceId}" skipped (missing id/name/blocks)`);
+      return;
+    }
+    if (seen.has(profile.id)) return;
+    seen.add(profile.id);
+    profiles.push(profile);
+  };
+
+  for (const row of rows) {
+    const doc = row.doc as LooseDoc | undefined;
+    const sourceId = String(row.id ?? doc?._id ?? '(unknown)');
+    if (!doc || typeof doc !== 'object' || doc.error) continue;
+    if (sourceId.startsWith('_design/')) continue;
+    if (looksLikeProjectDoc(doc)) continue;
+
+    if (isProfileCatalogMarker(doc) && Array.isArray(doc.profiles)) {
+      for (const entry of doc.profiles) {
+        if (!entry || typeof entry !== 'object') continue;
+        push(asDeviceProfile(entry as LooseDoc), `${sourceId}/profiles`);
+      }
+      continue;
+    }
+
+    if (typeof doc.name === 'string' && Array.isArray(doc.blocks)) {
+      push(asDeviceProfile(doc), sourceId);
+      continue;
+    }
+
+    console.warn(
+      `Couch doc "${sourceId}" skipped (need name + blocks[]; got keys: ${Object.keys(doc).join(', ')})`,
+    );
+  }
+
+  return profiles.sort((a, b) => a.name.localeCompare(b.name, 'de'));
+}
 
 /** Supplies the Bearer token for CouchDB (Keycloak or OpenCloud host token). */
 export type CouchAccessTokenProvider = () => Promise<string>;
@@ -79,34 +195,12 @@ async function readJson<T>(response: Response): Promise<T> {
   return data as T;
 }
 
-function isProfileDoc(doc: unknown): doc is CloudProfileDoc {
-  if (!doc || typeof doc !== 'object') return false;
-  const candidate = doc as Partial<CloudProfileDoc> & {error?: string};
-  return Boolean(
-    !candidate.error &&
-      candidate.format === 'blockberry-device-profile' &&
-      candidate.version === 1 &&
-      typeof candidate.id === 'string' &&
-      typeof candidate.name === 'string' &&
-      Array.isArray(candidate.blocks),
-  );
-}
-
 export function toDeviceProfile(doc: CloudProfileDoc): DeviceProfile {
-  return {
-    id: doc.id,
-    name: doc.name,
-    description: doc.description,
-    blocks: [...doc.blocks],
-    ...(doc.channels
-      ? {
-          channels: {
-            inputs: doc.channels.inputs ? [...doc.channels.inputs] : undefined,
-            outputs: doc.channels.outputs ? [...doc.channels.outputs] : undefined,
-          },
-        }
-      : {}),
-  };
+  const profile = asDeviceProfile(doc as LooseDoc);
+  if (!profile) {
+    throw new Error(`Ungültiges Geräteprofil-Dokument: ${doc._id ?? doc.id}`);
+  }
+  return profile;
 }
 
 export function projectDocId(name: string, existingId?: string): string {
@@ -173,9 +267,12 @@ export async function listCloudProfiles(): Promise<DeviceProfile[]> {
     appConfig.couchProfilesDb,
   );
   const data = await readJson<AllDocsResponse<CloudProfileDoc>>(response);
-  return data.rows
-    .map((row) => row.doc)
-    .filter(isProfileDoc)
-    .map(toDeviceProfile)
-    .sort((a, b) => a.name.localeCompare(b.name, 'de'));
+  const profiles = deviceProfilesFromCouchRows(data.rows ?? []);
+  if (!profiles.length) {
+    console.warn(
+      `Keine Geräteprofile in CouchDB "${appConfig.couchProfilesDb}" ` +
+        `(${data.rows?.length ?? 0} Docs). Erwartet Docs mit name + blocks[].`,
+    );
+  }
+  return profiles;
 }

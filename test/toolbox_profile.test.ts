@@ -1,10 +1,33 @@
-import {describe, expect, it} from 'vitest';
+import {beforeEach, describe, expect, it} from 'vitest';
+import {setDeviceProfiles} from '../src/device_profiles';
 import {toolboxForProfile} from '../src/toolbox';
 
 type Category = {
   kind?: string;
   name?: string;
   contents?: Array<{kind?: string; type?: string; custom?: string}>;
+};
+
+const PICO_TELEMETRY = {
+  id: 'pico_telemetry',
+  name: 'Pico Telemetry',
+  blocks: [
+    'mini_sps_task',
+    'sps_wait_ms',
+    'sps_digital_input',
+    'sps_digital_output',
+    'sensor_ready',
+    'sensor_temp',
+    'sensor_pressure',
+    'sensor_humidity',
+    'escalation_rule',
+    'signal_set',
+    'monitor_value',
+    'thingsboard_telemetry',
+    'thingsboard_attribute',
+    'thingsboard_connected',
+    'log_print',
+  ],
 };
 
 function categories(profileId: string | null): Category[] {
@@ -23,6 +46,10 @@ function domainBlockTypes(profileId: string | null): string[] {
 }
 
 describe('toolboxForProfile', () => {
+  beforeEach(() => {
+    setDeviceProfiles([PICO_TELEMETRY]);
+  });
+
   it('returns the full toolbox when no profile is selected', () => {
     const types = domainBlockTypes(null);
     expect(types).toContain('canopen_nmt');
@@ -48,5 +75,12 @@ describe('toolboxForProfile', () => {
     expect(types).toContain('thingsboard_connected');
     expect(types).not.toContain('thingsboard_alarm_create');
     expect(types).not.toContain('od_read');
+  });
+
+  it('keeps the full toolbox when the profile id is unknown', () => {
+    setDeviceProfiles([]);
+    const types = domainBlockTypes('pico_telemetry');
+    expect(types).toContain('od_read');
+    expect(types).toContain('canopen_nmt');
   });
 });

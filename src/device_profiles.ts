@@ -1,8 +1,6 @@
 /**
- * Device profiles: bundled JSON as fallback, optionally replaced from CouchDB.
+ * Device profiles: loaded exclusively from CouchDB at runtime.
  */
-
-import profilesFile from './device_profiles.json' with {type: 'json'};
 
 export type DeviceProfile = {
   id: string;
@@ -16,27 +14,15 @@ export type DeviceProfile = {
   };
 };
 
-type DeviceProfilesFile = {
-  format: 'blockberry-device-profiles';
-  version: number;
-  profiles: DeviceProfile[];
-};
-
-const catalog = profilesFile as DeviceProfilesFile;
-
-/** Active profile list (starts as bundled fallback; may be replaced from CouchDB). */
-export const deviceProfiles: DeviceProfile[] = [...catalog.profiles];
+/** Active profile list (empty until CouchDB load). */
+export const deviceProfiles: DeviceProfile[] = [];
 
 export function getDeviceProfile(id: string | null | undefined): DeviceProfile | undefined {
   if (!id) return undefined;
   return deviceProfiles.find((profile) => profile.id === id);
 }
 
-/** Replaces the in-memory profile list (e.g. after loading from CouchDB). */
+/** Replaces the in-memory profile list (after loading from CouchDB). */
 export function setDeviceProfiles(profiles: DeviceProfile[]): void {
   deviceProfiles.splice(0, deviceProfiles.length, ...profiles);
-}
-
-export function bundledDeviceProfiles(): DeviceProfile[] {
-  return [...catalog.profiles];
 }

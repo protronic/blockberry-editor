@@ -12,7 +12,6 @@ export {
   deviceProfiles,
   getDeviceProfile,
   setDeviceProfiles,
-  bundledDeviceProfiles,
   type DeviceProfile,
 } from './device_profiles.js';
 export {

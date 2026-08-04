@@ -87,9 +87,9 @@ Defaults (überschreibbar per `.env`, siehe `.env.example`):
 | `VITE_COUCH_DB` | `blockberry-projects` |
 | `VITE_COUCH_PROFILES_DB` | `bockberry-profiles` |
 
-Geräteprofile werden nach dem Login aus `VITE_COUCH_PROFILES_DB` geladen
-(Dokumente mit `format: "blockberry-device-profile"`). Ohne Login oder bei leerer
-DB gilt der Fallback `src/device_profiles.json`. Seed-Beispiel:
+Geräteprofile werden nach dem Login ausschließlich aus `VITE_COUCH_PROFILES_DB`
+geladen. Ein Profil-Dokument braucht mindestens `name` und `blocks` (Id = `id`
+oder `_id`, z. B. `pico_telemetry_v1`). Seed-Beispiel:
 `scripts/seed-pico-telemetry-profile.json`.
 
 Am Keycloak-Client müssen **Valid redirect URIs** und **Web origins** die

@@ -128,7 +128,6 @@ import {
 } from '../web/couch';
 import {
   berryGenerator,
-  bundledDeviceProfiles,
   deviceProfiles,
   refreshSpsChannelFields,
   registerBlockBerryBlocks,
@@ -309,17 +308,17 @@ function showToast(message: string): void {
 }
 
 async function loadDeviceProfilesFromCouch(): Promise<void> {
-  setDeviceProfiles(bundledDeviceProfiles());
+  setDeviceProfiles([]);
   syncProfileOptions();
 
   if (!authStore.accessToken) {
-    console.warn('OpenCloud Access Token fehlt — Couch-Profile übersprungen');
+    console.warn('OpenCloud Access Token fehlt — keine Geräteprofile');
+    applyDeviceProfile('');
     return;
   }
 
   try {
     const profiles = await listCloudProfiles();
-    if (!profiles.length) return;
     setDeviceProfiles(profiles);
     syncProfileOptions();
     if (
@@ -331,7 +330,10 @@ async function loadDeviceProfilesFromCouch(): Promise<void> {
       applyDeviceProfile(selectedProfileId.value);
     }
   } catch (error) {
-    console.warn('Cloud device profiles unavailable, using bundled fallback', error);
+    console.warn('Cloud device profiles unavailable', error);
+    setDeviceProfiles([]);
+    syncProfileOptions();
+    applyDeviceProfile('');
   }
 }
 

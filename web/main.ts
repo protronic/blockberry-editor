@@ -4,7 +4,6 @@ import * as De from 'blockly/msg/de';
 import {
   berryGenerator,
   blockBerryToolbox,
-  bundledDeviceProfiles,
   deviceProfiles,
   refreshSpsChannelFields,
   registerBlockBerryBlocks,
@@ -223,24 +222,24 @@ function populateDeviceProfiles(): void {
   }
 }
 
-async function loadDeviceProfilesFromCloud(): Promise<boolean> {
-  if (!isAuthenticated()) return false;
+async function loadDeviceProfilesFromCloud(): Promise<void> {
+  setDeviceProfiles([]);
+  populateDeviceProfiles();
+  if (!isAuthenticated()) {
+    applyDeviceProfile('');
+    return;
+  }
   try {
     const profiles = await listCloudProfiles();
-    if (!profiles.length) return false;
     setDeviceProfiles(profiles);
     populateDeviceProfiles();
     applyDeviceProfile(selectedProfileId());
-    return true;
   } catch (error) {
-    console.warn('Cloud device profiles unavailable, using bundled fallback', error);
-    return false;
+    console.warn('Cloud device profiles unavailable', error);
+    setDeviceProfiles([]);
+    populateDeviceProfiles();
+    applyDeviceProfile('');
   }
-}
-
-function useBundledDeviceProfiles(): void {
-  setDeviceProfiles(bundledDeviceProfiles());
-  populateDeviceProfiles();
 }
 
 function projectState(): ProjectFile {
@@ -531,6 +530,5 @@ if (saved) {
 
 void initAuth().then(async () => {
   updateAuthUi();
-  const fromCloud = await loadDeviceProfilesFromCloud();
-  if (!fromCloud) useBundledDeviceProfiles();
+  await loadDeviceProfilesFromCloud();
 });
