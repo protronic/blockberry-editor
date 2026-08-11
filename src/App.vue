@@ -126,6 +126,7 @@ import {
   configureCouchAuth,
   listCloudProfiles,
 } from '../web/couch';
+import {blocklyMediaUrl} from './blocklyMedia';
 import {
   berryGenerator,
   deviceProfiles,
@@ -540,6 +541,8 @@ onMounted(async () => {
     renderer: 'zelos',
     trashcan: !props.isReadOnly,
     sounds: false,
+    // Local media (dist/web/media) — CDN is blocked by OpenCloud CSP img-src.
+    media: blocklyMediaUrl(),
     move: {
       scrollbars: {horizontal: true, vertical: true},
       drag: true,
@@ -585,6 +588,19 @@ onBeforeUnmount(() => {
 </script>
 
 <style scoped src="../web/styles.css"></style>
+<!--
+  Unscoped: Blockly SVGs and OpenCloud Tailwind live outside this component's
+  data-v scope. Tailwind preflight sets `svg { display: block }`, which overrides
+  Blockly's display="none" attribute on hidden flyout scrollbars.
+-->
+<style>
+.blocklyFlyoutScrollbar[display='none'],
+.blocklyMainWorkspaceScrollbar[display='none'],
+.blockberry-app svg.blocklyScrollbarVertical[display='none'],
+.blockberry-app svg.blocklyScrollbarHorizontal[display='none'] {
+  display: none !important;
+}
+</style>
 <style scoped>
 .blockberry-app {
   --ink: #17211d;
