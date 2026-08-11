@@ -4,12 +4,17 @@
 # Usage:
 #   .\scripts\test.ps1
 #   .\scripts\test.ps1 -OpenCloud
+#   .\scripts\test.ps1 -Write
+#   .\scripts\test.ps1 -OpenCloud -Write
 #
 # -OpenCloud: Token vom Keycloak-Client "web" (OpenCloud unter oc.protronic-gmbh.de),
 #             um zu prüfen, ob _couchdb.roles auch dort im Access Token landet.
+# -Write:     Opt-in für PUT eines Smoke-Dokuments in die Projekte-DB
+#             (Standard: nur GET /_session und GET /$DB).
 
 param(
-  [switch]$OpenCloud
+  [switch]$OpenCloud,
+  [switch]$Write
 )
 
 $KEYCLOAK_URL = "https://keycloak.protronic-gmbh.de"
@@ -76,21 +81,25 @@ try {
   throw
 }
 
-$docId = "project:smoke-$(Get-Date -Format 'yyyyMMdd-HHmmss')"
-$doc = @{
-  format    = "blockberry"
-  version   = 1
-  name      = if ($OpenCloud) { "smoke-test-opencloud" } else { "smoke-test" }
-  savedAt   = (Get-Date).ToUniversalTime().ToString("o")
-  workspace = @{}
-} | ConvertTo-Json -Compress
+if ($Write) {
+  $docId = "project:smoke-$(Get-Date -Format 'yyyyMMdd-HHmmss')"
+  $doc = @{
+    format    = "blockberry"
+    version   = 1
+    name      = if ($OpenCloud) { "smoke-test-opencloud" } else { "smoke-test" }
+    savedAt   = (Get-Date).ToUniversalTime().ToString("o")
+    workspace = @{}
+  } | ConvertTo-Json -Compress
 
-Write-Host "`nPUT /$COUCH_DB/$docId ..."
-$put = Invoke-RestMethod -Method Put -Headers $headers `
-  -ContentType "application/json; charset=utf-8" `
-  -Uri "$COUCH_URL/$COUCH_DB/$([uri]::EscapeDataString($docId))" `
-  -Body $doc
-$put | ConvertTo-Json -Depth 5
+  Write-Host "`nPUT /$COUCH_DB/$docId ..."
+  $put = Invoke-RestMethod -Method Put -Headers $headers `
+    -ContentType "application/json; charset=utf-8" `
+    -Uri "$COUCH_URL/$COUCH_DB/$([uri]::EscapeDataString($docId))" `
+    -Body $doc
+  $put | ConvertTo-Json -Depth 5
+} else {
+  Write-Host "`nPUT übersprungen (opt-in mit -Write)." -ForegroundColor Yellow
+}
 
 Write-Host "`nOK: CouchDB Smoke-Test erfolgreich." -ForegroundColor Green
 if ($OpenCloud) {
