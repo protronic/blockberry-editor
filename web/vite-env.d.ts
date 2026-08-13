@@ -12,3 +12,8 @@ interface ImportMetaEnv {
 interface ImportMeta {
   readonly env: ImportMetaEnv;
 }
+
+// Injected at build time, see build-info.ts.
+declare const __BB_VERSION__: string;
+declare const __BB_COMMIT__: string;
+declare const __BB_BUILD_TIME__: string;

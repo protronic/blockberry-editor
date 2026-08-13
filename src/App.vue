@@ -7,6 +7,8 @@
         <span class="brand-tag">OpenCloud</span>
       </div>
 
+      <ViewSwitch :current="appView" @change="setAppView" />
+
       <label class="project-name">
         <span>Projekt</span>
         <input
@@ -33,21 +35,39 @@
       </label>
 
       <nav class="top-actions" aria-label="Projektaktionen">
+        <template v-if="appView === 'editor'">
+          <button
+            class="button ghost"
+            type="button"
+            :disabled="isReadOnly"
+            @click="resetProject"
+          >
+            Zurücksetzen
+          </button>
+          <button class="button secondary" type="button" @click="exportScript">
+            .be exportieren
+          </button>
+        </template>
+        <ReplMenu v-else />
         <button
-          class="button ghost"
+          class="about-btn"
           type="button"
-          :disabled="isReadOnly"
-          @click="resetProject"
+          title="Über BlockBerry"
+          aria-label="Über BlockBerry"
+          @click="openAbout"
         >
-          Zurücksetzen
-        </button>
-        <button class="button secondary" type="button" @click="exportScript">
-          .be exportieren
+          <svg viewBox="0 0 16 16" aria-hidden="true">
+            <path
+              fill="currentColor"
+              d="M8 1a7 7 0 1 1 0 14A7 7 0 0 1 8 1zm0 1.5a5.5 5.5 0 1 0 0 11 5.5 5.5 0 0 0 0-11zM8 3.9a1.1 1.1 0 1 1 0 2.2 1.1 1.1 0 0 1 0-2.2zM7.1 7h1.8v5.2H7.1z"
+            />
+          </svg>
         </button>
       </nav>
     </header>
 
-    <main class="workspace-layout">
+    <div class="view-body">
+    <main v-show="appView === 'editor'" class="workspace-layout">
       <section class="editor-panel" aria-label="Blockly-Editor">
         <div class="panel-heading">
           <div>
@@ -105,11 +125,58 @@
       </aside>
     </main>
 
+    <BleRepl
+      v-if="replOpened"
+      v-show="appView === 'repl'"
+      embedded
+      :script="generatedCode"
+      :script-name="safeScriptName()"
+    />
+    </div>
+
     <footer class="statusbar">
       <span><i class="status-ready" /> BlockBerry bereit</span>
       <span>.bbprj → Blockly → Berry</span>
+      <button class="git-ref" type="button" :title="aboutInfo.commit" @click="openAbout">
+        {{ aboutInfo.commit }}
+      </button>
       <span>{{ blockCount }} Blöcke</span>
     </footer>
+
+    <dialog
+      ref="aboutDialog"
+      class="about-dialog"
+      aria-labelledby="about-title"
+      @click="onAboutBackdrop"
+      @cancel="closeAbout"
+    >
+      <div class="dialog-body">
+        <div class="dialog-heading">
+          <div>
+            <span class="eyebrow">OpenCloud</span>
+            <h2 id="about-title">BlockBerry Editor</h2>
+          </div>
+          <button class="dialog-close" type="button" aria-label="Schließen" @click="closeAbout">
+            ×
+          </button>
+        </div>
+        <dl class="about-rows">
+          <dt>Version</dt>
+          <dd>{{ aboutInfo.version }}</dd>
+          <dt>Git-Commit</dt>
+          <dd class="about-mono">{{ aboutInfo.commit }}</dd>
+          <dt>Build</dt>
+          <dd>{{ aboutInfo.buildTime }}</dd>
+          <dt>Blockly</dt>
+          <dd>{{ aboutInfo.blocklyVersion }}</dd>
+        </dl>
+        <div class="dialog-actions">
+          <button class="button ghost dark-text" type="button" @click="closeAbout">
+            Schließen
+          </button>
+        </div>
+      </div>
+    </dialog>
 
     <div ref="toastElement" class="toast" role="status" aria-live="polite" />
   </div>
@@ -120,12 +187,17 @@ import * as Blockly from 'blockly/core';
 import 'blockly/blocks';
 import * as De from 'blockly/msg/de';
 import type {Resource} from '@opencloud-eu/web-client';
-import {useAuthStore} from '@opencloud-eu/web-pkg';
+import {useAuthStore, useRouter} from '@opencloud-eu/web-pkg';
 import {computed, nextTick, onBeforeUnmount, onMounted, ref, shallowRef, watch} from 'vue';
 import {
   configureCouchAuth,
   listCloudProfiles,
 } from '../web/couch';
+import {
+  publishScript,
+  rememberEditor,
+  type AppView,
+} from './ble/session';
 import {blocklyMediaUrl} from './blocklyMedia';
 import {
   berryGenerator,
@@ -144,6 +216,9 @@ import {
   projectSignature,
   stripKnownProjectExtension,
 } from './project';
+import ReplMenu from './components/ReplMenu.vue';
+import ViewSwitch from './components/ViewSwitch.vue';
+import BleRepl from './views/BleRepl.vue';
 
 const props = withDefaults(
   defineProps<{
@@ -159,6 +234,7 @@ const emit = defineEmits<{
 }>();
 
 const authStore = useAuthStore();
+const router = useRouter();
 configureCouchAuth(async () => {
   const token = authStore.accessToken;
   if (!token) {
@@ -169,12 +245,25 @@ configureCouchAuth(async () => {
 
 const editorElement = ref<HTMLElement>();
 const toastElement = ref<HTMLElement>();
+const aboutDialog = ref<HTMLDialogElement>();
+
+const aboutInfo = {
+  version: __BB_VERSION__,
+  commit: __BB_COMMIT__,
+  buildTime: new Date(__BB_BUILD_TIME__).toLocaleString('de-DE', {
+    dateStyle: 'medium',
+    timeStyle: 'short',
+  }),
+  blocklyVersion: Blockly.VERSION,
+};
 const projectName = ref('Neue Steuerung');
 const selectedProfileId = ref('');
 const profileOptions = ref<DeviceProfile[]>([]);
 const generatedCode = ref('# Generator wird initialisiert …');
 const blockCount = ref(0);
 const livePreviewImage = ref('');
+const appView = ref<AppView>('editor');
+const replOpened = ref(false);
 // Blockly relies on identity comparisons in its internal data structures
 // (e.g. the connection database). A deep `ref` would wrap the workspace in a
 // reactive proxy and corrupt those lookups, so loads abort halfway through.
@@ -464,6 +553,34 @@ function centerWorkspace(): void {
   fitWorkspace();
 }
 
+function setAppView(view: AppView): void {
+  if (view === 'repl') {
+    publishScript(generatedCode.value, safeScriptName());
+    rememberEditor(router.currentRoute.value);
+    replOpened.value = true;
+  }
+  appView.value = view;
+  if (view === 'editor') {
+    void nextTick(() => {
+      if (!workspace.value) return;
+      Blockly.svgResize(workspace.value);
+      fitWorkspace();
+    });
+  }
+}
+
+function openAbout(): void {
+  aboutDialog.value?.showModal();
+}
+
+function closeAbout(): void {
+  aboutDialog.value?.close();
+}
+
+function onAboutBackdrop(event: MouseEvent): void {
+  if (event.target === aboutDialog.value) closeAbout();
+}
+
 function safeScriptName(): string {
   const base = projectName.value
     .trim()
@@ -505,7 +622,12 @@ watch(
   },
 );
 
+watch([generatedCode, projectName], () => {
+  publishScript(generatedCode.value, safeScriptName());
+});
+
 onMounted(async () => {
+  rememberEditor(router.currentRoute.value);
   Blockly.setLocale(De as unknown as Record<string, string>);
   registerBlockBerryBlocks();
   await nextTick();

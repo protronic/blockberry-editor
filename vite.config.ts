@@ -3,6 +3,7 @@ import {dirname, join} from 'node:path';
 import {fileURLToPath} from 'node:url';
 import {defineConfig} from '@opencloud-eu/extension-sdk';
 import type {Plugin} from 'vite';
+import {buildInfoDefine} from './build-info';
 
 const root = dirname(fileURLToPath(import.meta.url));
 const blocklyMediaSrc = join(root, 'node_modules/blockly/media');
@@ -24,6 +25,7 @@ function copyBlocklyMedia(): Plugin {
 
 export default defineConfig({
   name: 'blockberry-editor',
+  define: buildInfoDefine(),
   build: {
     outDir: 'dist/web',
     emptyOutDir: true,

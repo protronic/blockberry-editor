@@ -38,6 +38,19 @@ button {
   height: 100vh;
 }
 
+.view-body {
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+  overflow: hidden;
+}
+
+.view-body > * {
+  flex: 1 1 auto;
+  min-height: 0;
+  height: 100%;
+}
+
 .topbar {
   display: flex;
   align-items: center;
@@ -164,6 +177,43 @@ button {
   align-items: center;
   gap: 7px;
   margin-left: auto;
+}
+
+.about-btn {
+  display: grid;
+  place-items: center;
+  width: 34px;
+  height: 34px;
+  padding: 0;
+  color: #aebbb5;
+  background: transparent;
+  border: 1px solid #34413c;
+  border-radius: 5px;
+  transition: 140ms ease;
+}
+
+.about-btn:hover {
+  color: #fff;
+  background: #202c27;
+  transform: translateY(-1px);
+}
+
+.about-btn svg,
+.about-btn :deep(svg) {
+  display: block;
+  width: 16px;
+  height: 16px;
+}
+
+.about-btn :deep(.icon-pair svg) {
+  width: 14px;
+  height: 14px;
+}
+
+.upload-ble-btn {
+  width: auto;
+  min-width: 42px;
+  padding: 0 8px;
 }
 
 .button {
@@ -433,6 +483,50 @@ h2 {
 
 .statusbar span:last-child {
   margin-left: auto;
+}
+
+.git-ref {
+  padding: 0;
+  color: #56635d;
+  font: inherit;
+  font-family: 'DM Mono', ui-monospace, Consolas, monospace;
+  letter-spacing: 0.02em;
+  background: transparent;
+  border: 0;
+  cursor: pointer;
+}
+
+.git-ref:hover {
+  color: var(--berry);
+}
+
+.about-dialog {
+  width: min(420px, calc(100vw - 32px));
+}
+
+.about-rows {
+  display: grid;
+  grid-template-columns: auto 1fr;
+  gap: 8px 18px;
+  margin: 18px 0 4px;
+}
+
+.about-rows dt {
+  color: #67736d;
+  font-size: 11px;
+  font-weight: 700;
+}
+
+.about-rows dd {
+  margin: 0;
+  overflow-wrap: anywhere;
+  font-size: 13px;
+}
+
+.about-mono {
+  font-family: 'DM Mono', ui-monospace, Consolas, monospace;
+  font-size: 12px;
+  user-select: all;
 }
 
 .status-ready {
