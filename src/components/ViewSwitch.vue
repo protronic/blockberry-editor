@@ -15,8 +15,8 @@
       type="button"
       role="tab"
       :aria-selected="current === 'repl'"
-      title="BLE REPL"
-      aria-label="BLE REPL"
+      title="REPL"
+      aria-label="REPL"
       @click="emit('change', 'repl')"
     >
       <AppIcon name="ble" />

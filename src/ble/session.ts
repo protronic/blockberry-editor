@@ -1,8 +1,24 @@
 import {computed, ref, shallowRef} from 'vue'
 import type {LocationQuery, RouteParams} from 'vue-router'
 import {bluetoothSupported, connectNus, type NusSession} from './nus'
+import {connectSerial, serialSupported, type SerialSession} from './serial'
 
 export type AppView = 'editor' | 'repl'
+export type ReplLink = 'ble' | 'serial'
+
+const LINK_STORAGE_KEY = 'blockberry-repl-link'
+
+function readStoredLink(): ReplLink {
+  try {
+    const value = localStorage.getItem(LINK_STORAGE_KEY)
+    if (value === 'serial' || value === 'ble') return value
+  } catch {
+    /* private mode */
+  }
+  return 'ble'
+}
+
+export const replLink = ref<ReplLink>(readStoredLink())
 
 export const currentScript = ref('')
 export const currentScriptName = ref('')
@@ -13,13 +29,31 @@ export const editorReturn = ref<{
   query: LocationQuery
 } | null>(null)
 
-const session = shallowRef<NusSession | null>(null)
+type ReplSession = (NusSession | SerialSession) & {kind?: ReplLink}
+
+const session = shallowRef<ReplSession | null>(null)
 export const bleLog = ref('')
 export const bleConnecting = ref(false)
 export const bleError = ref('')
 export const bleSending = ref(false)
 export const bleName = computed(() => session.value?.name ?? '')
 export const bleConnected = computed(() => !!session.value)
+
+export function currentLinkSupported(): boolean {
+  return replLink.value === 'serial' ? serialSupported() : bluetoothSupported()
+}
+
+export function setReplLink(kind: ReplLink): void {
+  if (replLink.value === kind) return
+  if (session.value) disconnectBle()
+  replLink.value = kind
+  bleError.value = ''
+  try {
+    localStorage.setItem(LINK_STORAGE_KEY, kind)
+  } catch {
+    /* ignore */
+  }
+}
 
 let retainCount = 0
 
@@ -70,19 +104,22 @@ export function releaseBle(): void {
 }
 
 export async function connectBle(): Promise<void> {
-  if (!bluetoothSupported() || bleConnecting.value || session.value) return
+  if (!currentLinkSupported() || bleConnecting.value || session.value) return
   bleError.value = ''
   bleConnecting.value = true
+  const kind = replLink.value
   try {
-    const next = await connectNus({
-      onRx: (text) => appendBleLog(text),
+    const hooks = {
+      onRx: (text: string) => appendBleLog(text),
       onDisconnect: () => {
         session.value = null
         appendBleLog('\n— getrennt —\n')
       },
-    })
-    session.value = next
-    appendBleLog(`— verbunden mit ${next.name} —\n`)
+    }
+    const next = kind === 'serial' ? await connectSerial(hooks) : await connectNus(hooks)
+    session.value = {...next, kind}
+    const via = kind === 'serial' ? 'USB-CDC' : 'BLE'
+    appendBleLog(`— verbunden mit ${next.name} (${via}) —\n`)
   } catch (connectError) {
     const message =
       connectError instanceof Error ? connectError.message : String(connectError)

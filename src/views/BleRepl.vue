@@ -1,11 +1,13 @@
 <template>
   <div class="ble-repl" :class="{'is-embedded': embedded}">
     <header v-if="!embedded" class="ble-topbar">
-      <div class="ble-brand" aria-label="BLE REPL">
+      <div class="ble-brand" aria-label="REPL">
         <span class="ble-mark" aria-hidden="true"><span /><span /><span /></span>
         <div>
-          <strong>BLE REPL</strong>
-          <small>Nordic UART · BLEberry</small>
+          <strong>REPL</strong>
+          <small>{{
+            replLink === 'serial' ? 'Web Serial · USB-CDC' : 'Web Bluetooth · NUS'
+          }}</small>
         </div>
       </div>
       <ViewSwitch
@@ -17,21 +19,16 @@
       <ReplMenu />
     </header>
 
-    <p v-if="!supported" class="ble-banner warn">
-      Web Bluetooth braucht Chrome oder Edge über HTTPS. Firefox unterstützt die API nicht.
-    </p>
+    <p v-if="!supported" class="ble-banner warn">{{ unsupportedHint }}</p>
     <p v-else-if="bleError" class="ble-banner error">{{ bleError }}</p>
     <p v-else-if="scriptReady" class="ble-banner script">
       Aktuelles Skript: <strong>{{ scriptLabel }}</strong>
-      · {{ scriptLines }} Zeilen — Upload in die Eingabe oder per BLE senden.
+      · {{ scriptLines }} Zeilen — Upload in die Eingabe oder an das Gerät senden.
     </p>
 
     <main ref="logElement" class="ble-log" aria-label="REPL-Ausgabe">
       <pre v-if="bleLog">{{ bleLog }}</pre>
-      <p v-else class="ble-empty">
-        Mit einem BLEberry-Board verbinden. Das aktuelle BlockBerry-Skript lässt sich
-        laden und zeilenweise an die REPL senden.
-      </p>
+      <p v-else class="ble-empty">{{ emptyHint }}</p>
     </main>
 
     <form class="ble-input" @submit.prevent="sendLine">
@@ -43,7 +40,11 @@
         spellcheck="false"
         :disabled="!bleConnected"
         :placeholder="
-          bleConnected ? 'Berry-Zeile oder Skript, Enter zum Senden' : 'Zuerst Gerät verbinden'
+          bleConnected
+            ? 'Berry-Zeile oder Skript, Enter zum Senden'
+            : replLink === 'serial'
+              ? 'Zuerst USB-Gerät verbinden'
+              : 'Zuerst BLE-Gerät verbinden'
         "
         @keydown="onInputKey"
       />
@@ -67,13 +68,13 @@
 <script setup lang="ts">
 import {computed, nextTick, onBeforeUnmount, onMounted, ref, watch} from 'vue'
 import {useRouter} from '@opencloud-eu/web-pkg'
-import {bluetoothSupported} from '../ble/nus'
 import {
   bleConnected,
   bleConnecting,
   bleError,
   bleLog,
   bleName,
+  currentLinkSupported,
   currentScript,
   currentScriptName,
   editorReturn,
@@ -81,6 +82,7 @@ import {
   releaseBle,
   retainBle,
   replDraft,
+  replLink,
   scriptLineCount,
   sendText,
   type AppView,
@@ -99,25 +101,39 @@ const props = withDefaults(
 )
 
 const router = useRouter()
-const supported = bluetoothSupported()
+const supported = computed(() => currentLinkSupported())
 const line = ref('')
 const logElement = ref<HTMLElement>()
 const history: string[] = []
 let historyIndex = -1
 
 const status = computed(() => {
-  if (!supported) return 'unsupported'
+  if (!supported.value) return 'unsupported'
   if (bleConnecting.value) return 'connecting'
   if (bleConnected.value) return 'online'
   return 'offline'
 })
 
 const statusLabel = computed(() => {
-  if (status.value === 'unsupported') return 'Kein Web Bluetooth'
+  if (status.value === 'unsupported') {
+    return replLink.value === 'serial' ? 'Kein Web Serial' : 'Kein Web Bluetooth'
+  }
   if (status.value === 'connecting') return 'Verbinden …'
   if (status.value === 'online') return bleName.value || 'Verbunden'
   return 'Getrennt'
 })
+
+const unsupportedHint = computed(() =>
+  replLink.value === 'serial'
+    ? 'Web Serial braucht Chrome oder Edge über HTTPS. Firefox unterstützt die API nicht.'
+    : 'Web Bluetooth braucht Chrome oder Edge über HTTPS. Firefox unterstützt die API nicht.',
+)
+
+const emptyHint = computed(() =>
+  replLink.value === 'serial'
+    ? 'USB-Gerät wählen. Das Board erscheint als serieller Port (USB-CDC). Das aktuelle BlockBerry-Skript lässt sich laden und zeilenweise an die REPL senden.'
+    : 'Mit einem BLEberry-Board verbinden. Das aktuelle BlockBerry-Skript lässt sich laden und zeilenweise an die REPL senden.',
+)
 
 const scriptReady = computed(() => currentScript.value.trim().length > 0)
 const scriptLabel = computed(() => currentScriptName.value || 'script.be')

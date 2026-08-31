@@ -1,5 +1,31 @@
 <template>
   <nav class="repl-toolbar" aria-label="REPL-Aktionen">
+    <div class="repl-link" role="radiogroup" aria-label="Verbindungstyp">
+      <button
+        class="repl-tool"
+        type="button"
+        role="radio"
+        :aria-checked="replLink === 'ble'"
+        :disabled="bleConnecting || bleConnected"
+        title="Web Bluetooth (BLE / NUS)"
+        aria-label="Web Bluetooth"
+        @click="onLink('ble')"
+      >
+        <AppIcon name="ble" />
+      </button>
+      <button
+        class="repl-tool"
+        type="button"
+        role="radio"
+        :aria-checked="replLink === 'serial'"
+        :disabled="bleConnecting || bleConnected"
+        title="Web Serial (USB-CDC)"
+        aria-label="Web Serial USB-CDC"
+        @click="onLink('serial')"
+      >
+        <AppIcon name="usb" />
+      </button>
+    </div>
     <button
       class="repl-tool"
       type="button"
@@ -9,7 +35,7 @@
       :aria-label="connectLabel"
       @click="onConnect"
     >
-      <AppIcon name="ble" />
+      <AppIcon :name="replLink === 'serial' ? 'usb' : 'ble'" />
       <span class="repl-dot" :data-state="status" />
     </button>
     <button
@@ -17,10 +43,10 @@
       type="button"
       :disabled="!canSend"
       :title="sendTitle"
-      aria-label="Skript per BLE hochladen"
+      :aria-label="sendTitle"
       @click="onSend"
     >
-      <AppIcon name="upload-ble" />
+      <AppIcon :name="replLink === 'serial' ? 'upload-usb' : 'upload-ble'" />
     </button>
     <button
       class="repl-tool"
@@ -42,7 +68,6 @@
 
 <script setup lang="ts">
 import {computed} from 'vue'
-import {bluetoothSupported} from '../ble/nus'
 import {
   bleConnected,
   bleConnecting,
@@ -50,17 +75,21 @@ import {
   bleSending,
   clearBleLog,
   connectBle,
+  currentLinkSupported,
   currentScript,
   disconnectBle,
+  replLink,
   sendCurrentScript,
+  setReplLink,
+  type ReplLink,
 } from '../ble/session'
 import AppIcon from './AppIcon.vue'
 
-const supported = bluetoothSupported()
+const supported = computed(() => currentLinkSupported())
 const scriptReady = computed(() => currentScript.value.trim().length > 0)
 const canSend = computed(() => bleConnected.value && scriptReady.value && !bleSending.value)
 const status = computed(() => {
-  if (!supported) return 'unsupported'
+  if (!supported.value) return 'unsupported'
   if (bleConnecting.value) return 'connecting'
   if (bleConnected.value) return 'online'
   return 'offline'
@@ -68,13 +97,17 @@ const status = computed(() => {
 const connectLabel = computed(() => {
   if (bleConnecting.value) return 'Verbinden …'
   if (bleConnected.value) return 'Trennen'
-  return 'Gerät verbinden'
+  return replLink.value === 'serial' ? 'USB-Gerät verbinden' : 'BLE-Gerät verbinden'
 })
 const sendTitle = computed(() => {
   if (!scriptReady.value) return 'Kein Editor-Skript'
   if (!bleConnected.value) return 'Zuerst Gerät verbinden'
-  return 'Skript per BLE senden'
+  return replLink.value === 'serial' ? 'Skript per USB-CDC senden' : 'Skript per BLE senden'
 })
+
+function onLink(kind: ReplLink): void {
+  setReplLink(kind)
+}
 
 function onConnect(): void {
   if (bleConnected.value) disconnectBle()
@@ -91,6 +124,30 @@ function onSend(): void {
   display: flex;
   align-items: center;
   gap: 7px;
+}
+
+.repl-link {
+  display: flex;
+  gap: 0;
+  border: 1px solid #34413c;
+  border-radius: 5px;
+  overflow: hidden;
+}
+
+.repl-link .repl-tool {
+  width: 30px;
+  height: 32px;
+  border: 0;
+  border-radius: 0;
+}
+
+.repl-link .repl-tool + .repl-tool {
+  border-left: 1px solid #34413c;
+}
+
+.repl-link .repl-tool[aria-checked='true'] {
+  color: #80e6bc;
+  background: #1b2c27;
 }
 
 .repl-tool {
