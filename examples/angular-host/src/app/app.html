@@ -1,0 +1,10 @@
+<main class="shell">
+  <header class="topbar">
+    <h1>BlockBerry im Angular-Host</h1>
+    <span class="stats">{{ blockCount() }} Blöcke · {{ contentBytes() }} Bytes .bbprj</span>
+  </header>
+  <div class="panes">
+    <div #editorHost class="editor" aria-label="Blockly-Editor"></div>
+    <pre class="code" aria-label="Berry-Codevorschau">{{ code() }}</pre>
+  </div>
+</main>

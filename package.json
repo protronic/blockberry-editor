@@ -10,7 +10,18 @@
       "types": "./dist/lib/library.d.ts",
       "import": "./dist/lib/library.js"
     },
-    "./toolbox": "./dist/lib/toolbox.js"
+    "./embed": {
+      "types": "./dist/lib/embed.d.ts",
+      "import": "./dist/lib/embed.js"
+    },
+    "./project": {
+      "types": "./dist/lib/project.d.ts",
+      "import": "./dist/lib/project.js"
+    },
+    "./toolbox": {
+      "types": "./dist/lib/toolbox.d.ts",
+      "import": "./dist/lib/toolbox.js"
+    }
   },
   "files": [
     "dist"
@@ -45,9 +56,7 @@
   },
   "homepage": "https://github.com/protronic/blockberry-editor#readme",
   "dependencies": {
-    "blockly": "^13.1.1",
-    "keycloak-js": "^26.2.4",
-    "vue": "^3.5.13"
+    "blockly": "^13.1.1"
   },
   "devDependencies": {
     "@opencloud-eu/extension-sdk": "7.1.2",
@@ -55,11 +64,13 @@
     "@opencloud-eu/web-client": "7.0.0",
     "@opencloud-eu/web-pkg": "7.0.0",
     "@vitejs/plugin-vue": "6.0.8",
+    "keycloak-js": "^26.2.4",
     "pinia": "^3.0.4",
     "playwright-core": "^1.62.1",
     "typescript": "^6.0.3",
     "vite": "^8.1.4",
     "vitest": "^4.1.10",
+    "vue": "^3.5.13",
     "vue-router": "^5.0.0",
     "vue-tsc": "^3.0.0",
     "vue3-gettext": "^4.0.0-beta.1"

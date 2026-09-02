@@ -11,12 +11,6 @@ importers:
       blockly:
         specifier: ^13.1.1
         version: 13.2.0(jsdom@29.1.1)
-      keycloak-js:
-        specifier: ^26.2.4
-        version: 26.2.4
-      vue:
-        specifier: ^3.5.13
-        version: 3.5.40(typescript@6.0.3)
     devDependencies:
       '@opencloud-eu/extension-sdk':
         specifier: 7.1.2
@@ -33,6 +27,9 @@ importers:
       '@vitejs/plugin-vue':
         specifier: 6.0.8
         version: 6.0.8(vite@8.1.5(jiti@2.7.0)(yaml@2.9.0))(vue@3.5.40(typescript@6.0.3))
+      keycloak-js:
+        specifier: ^26.2.4
+        version: 26.2.4
       pinia:
         specifier: ^3.0.4
         version: 3.0.4(typescript@6.0.3)(vue@3.5.40(typescript@6.0.3))
@@ -48,6 +45,9 @@ importers:
       vitest:
         specifier: ^4.1.10
         version: 4.1.10(jsdom@29.1.1)(vite@8.1.5(jiti@2.7.0)(yaml@2.9.0))
+      vue:
+        specifier: ^3.5.13
+        version: 3.5.40(typescript@6.0.3)
       vue-router:
         specifier: ^5.0.0
         version: 5.2.0(@vue/compiler-sfc@3.5.40)(pinia@3.0.4(typescript@6.0.3)(vue@3.5.40(typescript@6.0.3)))(rolldown@1.1.5)(vite@8.1.5(jiti@2.7.0)(yaml@2.9.0))(vue@3.5.40(typescript@6.0.3))

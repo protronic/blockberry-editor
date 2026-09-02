@@ -18,6 +18,10 @@
     "src/library.ts",
     "src/toolbox.ts",
     "src/device_profiles.ts",
-    "src/active_profile.ts"
+    "src/active_profile.ts",
+    "src/brand.ts",
+    "src/project.ts",
+    "src/preview.ts",
+    "src/embed.ts"
   ]
 }

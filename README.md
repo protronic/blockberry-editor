@@ -104,6 +104,50 @@ der Browser meldet das als CORS-Fehler. Client sollte **public** sein
 
 CouchDB braucht CORS für dieselbe Origin sowie JWT-Auth mit Claim `_couchdb.roles`.
 
+### Einbettung in Angular oder andere Frameworks
+
+`@protronic/blockberry-editor/embed` stellt den kompletten Editor-Kern
+(Blöcke, Toolbox, Geräteprofile, Berry-Generator, `.bbprj`-Serialisierung
+mit Vorschau) framework-agnostisch bereit — dieselbe Basis, die auch die
+OpenCloud-App nutzt. Die Host-App liefert nur einen Container und übernimmt
+die Persistenz über `onChange`/`loadContent`:
+
+```ts
+import {createBlockBerryEditor} from '@protronic/blockberry-editor/embed';
+
+const editor = createBlockBerryEditor({
+  container: document.querySelector('#editor')!,
+  content: storedBbprj,          // optional: gespeichertes .bbprj
+  locale: 'de',
+  mediaUrl: 'blockly-media/',    // Blockly-Assets, siehe unten
+  onChange: ({content, code}) => save(content),
+});
+// editor.loadContent(...), editor.getState(), editor.setDeviceProfile(...),
+// editor.resize(), editor.destroy()
+```
+
+Die Blockly-Media-Assets (`node_modules/blockly/media`) muss die Host-App
+selbst ausliefern — in Angular über `angular.json`:
+
+```json
+{"glob": "**/*", "input": "node_modules/blockly/media", "output": "blockly-media"}
+```
+
+Ein lauffähiges Beispiel liegt in `examples/angular-host` (Angular 20,
+Abhängigkeit per `file:../..`):
+
+```sh
+pnpm run build:lib                       # dist/lib bauen
+cd examples/angular-host
+npm install
+npx ng build                             # Produktions-Build
+node e2e-smoke.mjs                       # Browser-Smoke-Test gegen den Build
+```
+
+Der Smoke-Test erwartet den Build unter `http://localhost:5399` (z. B.
+`python3 -m http.server 5399` in `dist/angular-host/browser`) und ein
+Chromium unter `/opt/pw-browsers/chromium` bzw. `HARNESS_CHROMIUM`.
+
 ### Generator in einer eigenen Oberfläche
 
 ```ts
